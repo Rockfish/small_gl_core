@@ -339,10 +339,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "glad-gl"
-version = "2.0.4"
-
-[[package]]
 name = "glam"
 version = "0.24.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -915,7 +911,6 @@ checksum = "d66dc143e6b11c1eddc06d5c423cfc97062865baf299914ab64caa38182078fe"
 name = "small_gl_core"
 version = "0.1.0"
 dependencies = [
- "glad-gl",
  "glam",
  "image",
  "russimp",

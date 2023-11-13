@@ -38,7 +38,12 @@ pub struct SpriteModel {
 }
 
 impl SpriteModel {
-    pub fn new(name: &Rc<str>, shader: &Rc<Shader>, mesh: &Rc<Mesh>, sprite_data: SpriteData) -> Self {
+    pub fn new(
+        name: &Rc<str>,
+        shader: &Rc<Shader>,
+        mesh: &Rc<Mesh>,
+        sprite_data: SpriteData,
+    ) -> Self {
         SpriteModel {
             name: name.clone(),
             shader: shader.clone(),
@@ -55,7 +60,7 @@ impl SpriteModel {
             SpriteAnimationType::BackAndForth => self.update_back_and_forth(delta_time),
         }
 
-        self.shader.setVec2(
+        self.shader.set_vec2(
             "offset",
             &vec2(
                 self.sprite_data.offset.x + self.sprite_data.x_step * self.sprite_data.step_count,
@@ -63,8 +68,13 @@ impl SpriteModel {
             ),
         );
 
-        self.shader
-            .setVec2("tex_size", &vec2(self.sprite_data.texture_width, self.sprite_data.texture_height));
+        self.shader.set_vec2(
+            "tex_size",
+            &vec2(
+                self.sprite_data.texture_width,
+                self.sprite_data.texture_height,
+            ),
+        );
 
         self.mesh.render(&self.shader, position, angle, scale);
     }

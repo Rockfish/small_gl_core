@@ -1,11 +1,7 @@
-#![allow(non_snake_case)]
-#![allow(non_camel_case_types)]
-#![allow(unused_assignments)]
-
+use crate::gl;
+use crate::gl::{GLsizei, GLsizeiptr, GLvoid};
 use crate::shader::Shader;
 use crate::texture::{Texture, TextureType};
-use glad_gl::gl;
-use glad_gl::gl::{GLsizei, GLsizeiptr, GLvoid};
 use glam::u32;
 use glam::*;
 use std::mem;
@@ -56,22 +52,26 @@ pub struct ModelMesh {
     pub vertices: Vec<ModelVertex>,
     pub indices: Vec<u32>,
     pub textures: Vec<Rc<Texture>>,
-    pub VAO: u32,
-    pub VBO: u32,
-    pub EBO: u32,
+    pub vao: u32,
+    pub vbo: u32,
+    pub ebo: u32,
 }
 
 impl ModelMesh {
-    pub fn new(vertices: Vec<ModelVertex>, indices: Vec<u32>, textures: Vec<Rc<Texture>>) -> ModelMesh {
+    pub fn new(
+        vertices: Vec<ModelVertex>,
+        indices: Vec<u32>,
+        textures: Vec<Rc<Texture>>,
+    ) -> ModelMesh {
         let mut mesh = ModelMesh {
             vertices,
             indices,
             textures,
-            VAO: 0,
-            VBO: 0,
-            EBO: 0,
+            vao: 0,
+            vbo: 0,
+            ebo: 0,
         };
-        mesh.setupMesh();
+        mesh.setup_mesh();
         mesh
     }
 
@@ -110,27 +110,36 @@ impl ModelMesh {
                 };
 
                 // now set the sampler to the correct texture unit (location)
-                let texture_name = texture.texture_type.to_string().clone().add(&num.to_string());
-                shader.setInt(&texture_name, texture_unit as i32);
+                let texture_name = texture
+                    .texture_type
+                    .to_string()
+                    .clone()
+                    .add(&num.to_string());
+                shader.set_int(&texture_name, texture_unit as i32);
 
                 gl::BindTexture(gl::TEXTURE_2D, texture.id);
             }
 
-            gl::BindVertexArray(self.VAO);
-            gl::DrawElements(gl::TRIANGLES, self.indices.len() as i32, gl::UNSIGNED_INT, 0 as *const GLvoid);
+            gl::BindVertexArray(self.vao);
+            gl::DrawElements(
+                gl::TRIANGLES,
+                self.indices.len() as i32,
+                gl::UNSIGNED_INT,
+                std::ptr::null::<GLvoid>(),
+            );
             gl::BindVertexArray(0);
         }
     }
 
-    fn setupMesh(&mut self) {
+    fn setup_mesh(&mut self) {
         unsafe {
-            gl::GenVertexArrays(1, &mut self.VAO);
-            gl::GenBuffers(1, &mut self.VBO);
-            gl::GenBuffers(1, &mut self.EBO);
+            gl::GenVertexArrays(1, &mut self.vao);
+            gl::GenBuffers(1, &mut self.vbo);
+            gl::GenBuffers(1, &mut self.ebo);
 
             // load vertex data into vertex buffers
-            gl::BindVertexArray(self.VAO);
-            gl::BindBuffer(gl::ARRAY_BUFFER, self.VBO);
+            gl::BindVertexArray(self.vao);
+            gl::BindBuffer(gl::ARRAY_BUFFER, self.vbo);
             gl::BufferData(
                 gl::ARRAY_BUFFER,
                 (self.vertices.len() * mem::size_of::<ModelVertex>()) as GLsizeiptr,
@@ -139,7 +148,7 @@ impl ModelMesh {
             );
 
             // load index data into element buffer
-            gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, self.EBO);
+            gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, self.ebo);
             gl::BufferData(
                 gl::ELEMENT_ARRAY_BUFFER,
                 (self.indices.len() * mem::size_of::<u32>()) as GLsizeiptr,
@@ -155,7 +164,7 @@ impl ModelMesh {
                 gl::FLOAT,
                 gl::FALSE,
                 mem::size_of::<ModelVertex>() as GLsizei,
-                0 as *const GLvoid,
+                std::ptr::null::<GLvoid>(),
             );
 
             // vertex normals
@@ -232,9 +241,9 @@ impl ModelMesh {
 impl Drop for ModelMesh {
     fn drop(&mut self) {
         unsafe {
-            gl::DeleteVertexArrays(1, &self.VAO);
-            gl::DeleteBuffers(1, &self.VBO);
-            gl::DeleteBuffers(1, &self.EBO);
+            gl::DeleteVertexArrays(1, &self.vao);
+            gl::DeleteBuffers(1, &self.vbo);
+            gl::DeleteBuffers(1, &self.ebo);
         }
     }
 }
@@ -244,16 +253,37 @@ pub fn print_model_mesh(mesh: &ModelMesh) {
 
     println!("size vertex: {}", mem::size_of::<ModelVertex>());
     println!("OFFSET_OF_NORMAL: {}", mem::offset_of!(ModelVertex, normal));
-    println!("OFFSET_OF_TEXCOORDS: {}", mem::offset_of!(ModelVertex, tex_coords));
-    println!("OFFSET_OF_TANGENT: {}", mem::offset_of!(ModelVertex, tangent));
-    println!("OFFSET_OF_BITANGENT: {}", mem::offset_of!(ModelVertex, bi_tangent));
-    println!("OFFSET_OF_BONE_IDS: {}", mem::offset_of!(ModelVertex, bone_ids));
-    println!("OFFSET_OF_WEIGHTS: {}", mem::offset_of!(ModelVertex, bone_weights));
+    println!(
+        "OFFSET_OF_TEXCOORDS: {}",
+        mem::offset_of!(ModelVertex, tex_coords)
+    );
+    println!(
+        "OFFSET_OF_TANGENT: {}",
+        mem::offset_of!(ModelVertex, tangent)
+    );
+    println!(
+        "OFFSET_OF_BITANGENT: {}",
+        mem::offset_of!(ModelVertex, bi_tangent)
+    );
+    println!(
+        "OFFSET_OF_BONE_IDS: {}",
+        mem::offset_of!(ModelVertex, bone_ids)
+    );
+    println!(
+        "OFFSET_OF_WEIGHTS: {}",
+        mem::offset_of!(ModelVertex, bone_weights)
+    );
 
     println!("size of Vec3: {}", mem::size_of::<Vec3>());
     println!("size of Vec2: {}", mem::size_of::<Vec2>());
-    println!("size of [i32;4]: {}", mem::size_of::<[i32; MAX_BONE_INFLUENCE]>());
-    println!("size of [f32;4]: {}", mem::size_of::<[f32; MAX_BONE_INFLUENCE]>());
+    println!(
+        "size of [i32;4]: {}",
+        mem::size_of::<[i32; MAX_BONE_INFLUENCE]>()
+    );
+    println!(
+        "size of [f32;4]: {}",
+        mem::size_of::<[f32; MAX_BONE_INFLUENCE]>()
+    );
 
     println!(
         "size of vertex parts: {}",

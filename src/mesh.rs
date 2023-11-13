@@ -1,7 +1,7 @@
+use crate::gl;
+use crate::gl::{GLsizei, GLsizeiptr, GLuint, GLvoid};
 use crate::shader::Shader;
 use crate::texture::Texture;
-use glad_gl::gl;
-use glad_gl::gl::{GLsizei, GLsizeiptr, GLuint, GLvoid};
 use glam::{vec3, Mat4, Vec2, Vec3};
 use std::mem;
 use std::rc::Rc;
@@ -65,7 +65,12 @@ pub struct Mesh {
 }
 
 impl Mesh {
-    pub fn new(vertices: Vec<Vertex>, indices: Vec<u32>, texture: &Rc<Texture>, flip_to_xz: bool) -> Mesh {
+    pub fn new(
+        vertices: Vec<Vertex>,
+        indices: Vec<u32>,
+        texture: &Rc<Texture>,
+        flip_to_xz: bool,
+    ) -> Mesh {
         let mut vao: GLuint = 0;
         let mut vbo: GLuint = 0;
         let mut ebo: GLuint = 0;
@@ -96,7 +101,14 @@ impl Mesh {
 
             // vertex positions
             gl::EnableVertexAttribArray(0);
-            gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, mem::size_of::<Vertex>() as GLsizei, 0 as *const GLvoid);
+            gl::VertexAttribPointer(
+                0,
+                3,
+                gl::FLOAT,
+                gl::FALSE,
+                mem::size_of::<Vertex>() as GLsizei,
+                std::ptr::null::<GLvoid>(),
+            );
 
             // vertex texture coordinates
             gl::EnableVertexAttribArray(1);
@@ -149,16 +161,21 @@ impl Mesh {
 
         model_transform *= Mat4::from_axis_angle(vec3(0.0, 0.0, 1.0), angle.to_radians());
         model_transform *= Mat4::from_scale(scale);
-        shader.setMat4("model", &model_transform);
+        shader.set_mat4("model", &model_transform);
 
         let texture_location = 0;
-        shader.setInt("texture_diffuse1", texture_location as i32);
+        shader.set_int("texture_diffuse1", texture_location as i32);
 
         unsafe {
             gl::ActiveTexture(gl::TEXTURE0 + texture_location);
             gl::BindVertexArray(self.vao);
             gl::BindTexture(gl::TEXTURE_2D, self.texture.id);
-            gl::DrawElements(gl::TRIANGLES, self.indices.len() as i32, gl::UNSIGNED_INT, 0 as *const GLvoid);
+            gl::DrawElements(
+                gl::TRIANGLES,
+                self.indices.len() as i32,
+                gl::UNSIGNED_INT,
+                std::ptr::null::<GLvoid>(),
+            );
             gl::BindVertexArray(0);
         }
     }

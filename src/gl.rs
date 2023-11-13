@@ -1,3 +1,8 @@
+/*
+   glad
+   - OpenGL API bindings generated from https://gen.glad.sh/
+   - See https://github.com/Dav1dde/glad/tree/glad2
+*/
 pub use self::enumerations::*;
 pub use self::functions::*;
 pub use self::types::*;
@@ -14,7 +19,10 @@ struct FnPtr {
 impl FnPtr {
     fn new(ptr: *const c_void) -> FnPtr {
         if !ptr.is_null() {
-            FnPtr { ptr, is_loaded: true }
+            FnPtr {
+                ptr,
+                is_loaded: true,
+            }
         } else {
             FnPtr {
                 ptr: FnPtr::not_initialized as *const c_void,
@@ -130,8 +138,14 @@ pub mod types {
         message: *const GLchar,
         userParam: *mut GLvoid,
     );
-    pub type GLDEBUGPROCAMD =
-        extern "system" fn(id: GLuint, category: GLenum, severity: GLenum, length: GLsizei, message: *const GLchar, userParam: *mut GLvoid);
+    pub type GLDEBUGPROCAMD = extern "system" fn(
+        id: GLuint,
+        category: GLenum,
+        severity: GLenum,
+        length: GLsizei,
+        message: *const GLchar,
+        userParam: *mut GLvoid,
+    );
     pub type GLVULKANPROCNV = extern "system" fn();
 }
 
@@ -4274,23 +4288,28 @@ where
         storage::DrawArrays.set_ptr(loadfn("glDrawArrays"));
         storage::DrawArraysIndirect.set_ptr(loadfn("glDrawArraysIndirect"));
         storage::DrawArraysInstanced.set_ptr(loadfn("glDrawArraysInstanced"));
-        storage::DrawArraysInstancedBaseInstance.set_ptr(loadfn("glDrawArraysInstancedBaseInstance"));
+        storage::DrawArraysInstancedBaseInstance
+            .set_ptr(loadfn("glDrawArraysInstancedBaseInstance"));
         storage::DrawBuffer.set_ptr(loadfn("glDrawBuffer"));
         storage::DrawBuffers.set_ptr(loadfn("glDrawBuffers"));
         storage::DrawElements.set_ptr(loadfn("glDrawElements"));
         storage::DrawElementsBaseVertex.set_ptr(loadfn("glDrawElementsBaseVertex"));
         storage::DrawElementsIndirect.set_ptr(loadfn("glDrawElementsIndirect"));
         storage::DrawElementsInstanced.set_ptr(loadfn("glDrawElementsInstanced"));
-        storage::DrawElementsInstancedBaseInstance.set_ptr(loadfn("glDrawElementsInstancedBaseInstance"));
-        storage::DrawElementsInstancedBaseVertex.set_ptr(loadfn("glDrawElementsInstancedBaseVertex"));
-        storage::DrawElementsInstancedBaseVertexBaseInstance.set_ptr(loadfn("glDrawElementsInstancedBaseVertexBaseInstance"));
+        storage::DrawElementsInstancedBaseInstance
+            .set_ptr(loadfn("glDrawElementsInstancedBaseInstance"));
+        storage::DrawElementsInstancedBaseVertex
+            .set_ptr(loadfn("glDrawElementsInstancedBaseVertex"));
+        storage::DrawElementsInstancedBaseVertexBaseInstance
+            .set_ptr(loadfn("glDrawElementsInstancedBaseVertexBaseInstance"));
         storage::DrawPixels.set_ptr(loadfn("glDrawPixels"));
         storage::DrawRangeElements.set_ptr(loadfn("glDrawRangeElements"));
         storage::DrawRangeElementsBaseVertex.set_ptr(loadfn("glDrawRangeElementsBaseVertex"));
         storage::DrawTransformFeedback.set_ptr(loadfn("glDrawTransformFeedback"));
         storage::DrawTransformFeedbackInstanced.set_ptr(loadfn("glDrawTransformFeedbackInstanced"));
         storage::DrawTransformFeedbackStream.set_ptr(loadfn("glDrawTransformFeedbackStream"));
-        storage::DrawTransformFeedbackStreamInstanced.set_ptr(loadfn("glDrawTransformFeedbackStreamInstanced"));
+        storage::DrawTransformFeedbackStreamInstanced
+            .set_ptr(loadfn("glDrawTransformFeedbackStreamInstanced"));
         storage::EdgeFlag.set_ptr(loadfn("glEdgeFlag"));
         storage::EdgeFlagPointer.set_ptr(loadfn("glEdgeFlagPointer"));
         storage::EdgeFlagv.set_ptr(loadfn("glEdgeFlagv"));
@@ -4383,7 +4402,8 @@ where
         storage::GetFloatv.set_ptr(loadfn("glGetFloatv"));
         storage::GetFragDataIndex.set_ptr(loadfn("glGetFragDataIndex"));
         storage::GetFragDataLocation.set_ptr(loadfn("glGetFragDataLocation"));
-        storage::GetFramebufferAttachmentParameteriv.set_ptr(loadfn("glGetFramebufferAttachmentParameteriv"));
+        storage::GetFramebufferAttachmentParameteriv
+            .set_ptr(loadfn("glGetFramebufferAttachmentParameteriv"));
         storage::GetFramebufferParameteriv.set_ptr(loadfn("glGetFramebufferParameteriv"));
         storage::GetGraphicsResetStatus.set_ptr(loadfn("glGetGraphicsResetStatus"));
         storage::GetInteger64i_v.set_ptr(loadfn("glGetInteger64i_v"));
@@ -4404,9 +4424,11 @@ where
         storage::GetNamedBufferParameteriv.set_ptr(loadfn("glGetNamedBufferParameteriv"));
         storage::GetNamedBufferPointerv.set_ptr(loadfn("glGetNamedBufferPointerv"));
         storage::GetNamedBufferSubData.set_ptr(loadfn("glGetNamedBufferSubData"));
-        storage::GetNamedFramebufferAttachmentParameteriv.set_ptr(loadfn("glGetNamedFramebufferAttachmentParameteriv"));
+        storage::GetNamedFramebufferAttachmentParameteriv
+            .set_ptr(loadfn("glGetNamedFramebufferAttachmentParameteriv"));
         storage::GetNamedFramebufferParameteriv.set_ptr(loadfn("glGetNamedFramebufferParameteriv"));
-        storage::GetNamedRenderbufferParameteriv.set_ptr(loadfn("glGetNamedRenderbufferParameteriv"));
+        storage::GetNamedRenderbufferParameteriv
+            .set_ptr(loadfn("glGetNamedRenderbufferParameteriv"));
         storage::GetObjectLabel.set_ptr(loadfn("glGetObjectLabel"));
         storage::GetObjectPtrLabel.set_ptr(loadfn("glGetObjectPtrLabel"));
         storage::GetPixelMapfv.set_ptr(loadfn("glGetPixelMapfv"));
@@ -4421,7 +4443,8 @@ where
         storage::GetProgramPipelineiv.set_ptr(loadfn("glGetProgramPipelineiv"));
         storage::GetProgramResourceIndex.set_ptr(loadfn("glGetProgramResourceIndex"));
         storage::GetProgramResourceLocation.set_ptr(loadfn("glGetProgramResourceLocation"));
-        storage::GetProgramResourceLocationIndex.set_ptr(loadfn("glGetProgramResourceLocationIndex"));
+        storage::GetProgramResourceLocationIndex
+            .set_ptr(loadfn("glGetProgramResourceLocationIndex"));
         storage::GetProgramResourceName.set_ptr(loadfn("glGetProgramResourceName"));
         storage::GetProgramResourceiv.set_ptr(loadfn("glGetProgramResourceiv"));
         storage::GetProgramStageiv.set_ptr(loadfn("glGetProgramStageiv"));
@@ -4529,7 +4552,8 @@ where
         storage::InvalidateBufferSubData.set_ptr(loadfn("glInvalidateBufferSubData"));
         storage::InvalidateFramebuffer.set_ptr(loadfn("glInvalidateFramebuffer"));
         storage::InvalidateNamedFramebufferData.set_ptr(loadfn("glInvalidateNamedFramebufferData"));
-        storage::InvalidateNamedFramebufferSubData.set_ptr(loadfn("glInvalidateNamedFramebufferSubData"));
+        storage::InvalidateNamedFramebufferSubData
+            .set_ptr(loadfn("glInvalidateNamedFramebufferSubData"));
         storage::InvalidateSubFramebuffer.set_ptr(loadfn("glInvalidateSubFramebuffer"));
         storage::InvalidateTexImage.set_ptr(loadfn("glInvalidateTexImage"));
         storage::InvalidateTexSubImage.set_ptr(loadfn("glInvalidateTexSubImage"));
@@ -4649,7 +4673,8 @@ where
         storage::NamedFramebufferTexture.set_ptr(loadfn("glNamedFramebufferTexture"));
         storage::NamedFramebufferTextureLayer.set_ptr(loadfn("glNamedFramebufferTextureLayer"));
         storage::NamedRenderbufferStorage.set_ptr(loadfn("glNamedRenderbufferStorage"));
-        storage::NamedRenderbufferStorageMultisample.set_ptr(loadfn("glNamedRenderbufferStorageMultisample"));
+        storage::NamedRenderbufferStorageMultisample
+            .set_ptr(loadfn("glNamedRenderbufferStorageMultisample"));
         storage::NewList.set_ptr(loadfn("glNewList"));
         storage::Normal3b.set_ptr(loadfn("glNormal3b"));
         storage::Normal3bv.set_ptr(loadfn("glNormal3bv"));

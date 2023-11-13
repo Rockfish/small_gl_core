@@ -46,7 +46,9 @@ impl AssimpScene<'_> {
 
         match raw_scene {
             None => Err(AssimpScene::get_error()),
-            Some(raw_scene) => Ok(AssimpScene { assimp_scene: raw_scene }),
+            Some(raw_scene) => Ok(AssimpScene {
+                assimp_scene: raw_scene,
+            }),
         }
     }
 
@@ -70,7 +72,14 @@ impl Drop for AssimpScene<'_> {
     }
 }
 
-pub fn get_material_texture_filename(material: *mut aiMaterial, texture_type: TextureType, index: u32) -> Result<String, Error> {
+/// # Safety
+///
+/// This function calls into the assimp library.
+pub unsafe fn get_material_texture_filename(
+    material: *mut aiMaterial,
+    texture_type: TextureType,
+    index: u32,
+) -> Result<String, Error> {
     let mut path = MaybeUninit::uninit();
     let mut texture_mapping = MaybeUninit::uninit();
     let mut uv_index = MaybeUninit::uninit();
@@ -80,8 +89,7 @@ pub fn get_material_texture_filename(material: *mut aiMaterial, texture_type: Te
 
     let mut flags = MaybeUninit::uninit();
 
-    if unsafe {
-        aiGetMaterialTexture(
+    let result = aiGetMaterialTexture(
             material,
             texture_type.into(),
             index,
@@ -92,13 +100,15 @@ pub fn get_material_texture_filename(material: *mut aiMaterial, texture_type: Te
             op.as_mut_ptr(),
             map_mode.as_mut_ptr() as *mut _,
             flags.as_mut_ptr(),
-        )
-    } == aiReturn_aiReturn_SUCCESS
-    {
+        );
+
+    if result == aiReturn_aiReturn_SUCCESS {
         let filename: String = unsafe { path.assume_init() }.into();
         return Ok(filename);
     }
-    Err(Error::TextureError("aiGetMaterialTexture Error: Texture not found".to_string()))
+    Err(Error::TextureError(
+        "aiGetMaterialTexture Error: Texture not found".to_string(),
+    ))
 }
 
 impl From<TextureType> for aiTextureType {

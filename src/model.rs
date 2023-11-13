@@ -25,7 +25,7 @@ impl Model {
         let mut model_transform = Mat4::from_translation(position);
         model_transform *= Mat4::from_axis_angle(vec3(0.0, 1.0, 0.0), angle.to_radians());
         model_transform *= Mat4::from_scale(scale);
-        self.shader.setMat4("model", &model_transform);
+        self.shader.set_mat4("model", &model_transform);
 
         for mesh in self.meshes.iter() {
             mesh.render(&self.shader);
@@ -104,6 +104,7 @@ impl ModelBuilder {
         }
     }
 
+    #[allow(clippy::needless_range_loop)]
     fn process_node(&mut self, node: *mut aiNode, scene: &aiScene) -> Result<(), Error> {
         // process each mesh located at the current node
         // println!("{:?}", unsafe { (*node).mName });
@@ -117,7 +118,8 @@ impl ModelBuilder {
         }
 
         // Process children nodes
-        let slice = unsafe { slice_from_raw_parts((*node).mChildren, (*node).mNumChildren as usize) };
+        let slice =
+            unsafe { slice_from_raw_parts((*node).mChildren, (*node).mNumChildren as usize) };
 
         if let Some(child_nodes) = unsafe { slice.as_ref() } {
             for i in 0..child_nodes.len() {
@@ -127,7 +129,12 @@ impl ModelBuilder {
         Ok(())
     }
 
-    fn process_mesh(&mut self, scene_mesh: *mut aiMesh, scene: &aiScene) -> Result<ModelMesh, Error> {
+    #[allow(clippy::needless_range_loop)]
+    fn process_mesh(
+        &mut self,
+        scene_mesh: *mut aiMesh,
+        scene: &aiScene,
+    ) -> Result<ModelMesh, Error> {
         let scene_mesh = unsafe { *scene_mesh };
 
         let mut vertices: Vec<ModelVertex> = vec![];
@@ -172,16 +179,24 @@ impl ModelBuilder {
             vertices.push(vertex);
         }
         // now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
-        let assimp_faces = unsafe { slice_from_raw_parts(scene_mesh.mFaces, scene_mesh.mNumFaces as usize).as_ref() }.unwrap();
+        let assimp_faces = unsafe {
+            slice_from_raw_parts(scene_mesh.mFaces, scene_mesh.mNumFaces as usize).as_ref()
+        }
+        .unwrap();
 
         for i in 0..assimp_faces.len() {
             let face = assimp_faces[i];
-            let assimp_indices = unsafe { slice_from_raw_parts(face.mIndices, face.mNumIndices as usize).as_ref() }.unwrap();
+            let assimp_indices =
+                unsafe { slice_from_raw_parts(face.mIndices, face.mNumIndices as usize).as_ref() }
+                    .unwrap();
             indices.extend(assimp_indices.iter());
         }
 
         // process materials
-        let assimp_materials = unsafe { slice_from_raw_parts((*scene).mMaterials, (*scene).mNumMaterials as usize).as_ref() }.unwrap();
+        let assimp_materials = unsafe {
+            slice_from_raw_parts(scene.mMaterials, scene.mNumMaterials as usize).as_ref()
+        }
+        .unwrap();
         let material_index = scene_mesh.mMaterialIndex as usize;
         let assimp_material = assimp_materials[material_index];
 
@@ -212,13 +227,18 @@ impl ModelBuilder {
         Ok(mesh)
     }
 
-    fn load_material_textures(&mut self, assimp_material: *mut aiMaterial, texture_type: TextureType) -> Result<Vec<Rc<Texture>>, Error> {
+    fn load_material_textures(
+        &mut self,
+        assimp_material: *mut aiMaterial,
+        texture_type: TextureType,
+    ) -> Result<Vec<Rc<Texture>>, Error> {
         let mut textures: Vec<Rc<Texture>> = vec![];
 
-        let texture_count = unsafe { aiGetMaterialTextureCount(assimp_material, texture_type.into()) };
+        let texture_count =
+            unsafe { aiGetMaterialTextureCount(assimp_material, texture_type.into()) };
 
         for i in 0..texture_count {
-            let texture_filename = get_material_texture_filename(assimp_material, texture_type, i as u32)?;
+            let texture_filename = unsafe { get_material_texture_filename(assimp_material, texture_type, i)? };
             let full_path = self.directory.join(&texture_filename);
 
             let cached_texture = self
@@ -254,5 +274,8 @@ fn get_vec_from_parts(raw_data: *mut aiVector3D, size: c_uint) -> Vec<Vec3> {
     }
 
     let raw_array = unsafe { slice.as_ref() }.unwrap();
-    raw_array.iter().map(|aiv| vec3(aiv.x, aiv.y, aiv.z)).collect()
+    raw_array
+        .iter()
+        .map(|aiv| vec3(aiv.x, aiv.y, aiv.z))
+        .collect()
 }

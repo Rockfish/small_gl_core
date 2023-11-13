@@ -1,15 +1,10 @@
 use crate::error::Error;
-use glad_gl::gl;
-use glad_gl::gl::{GLint, GLsizei, GLuint, GLvoid};
+use crate::gl;
+use crate::gl::{GLint, GLsizei, GLuint, GLvoid};
 use image::ColorType;
 use std::ffi::{c_uint, OsString};
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
-
-// pub struct Gamma(pub bool);
-// pub struct FlipV(pub bool);
-
-// utility function for loading a 2D texture from file
 
 #[derive(Debug)]
 pub enum TextureFilter {
@@ -65,18 +60,21 @@ pub struct Texture {
 
 impl Texture {
     pub fn new(texture_path: PathBuf, texture_config: &TextureConfig) -> Result<Texture, Error> {
-        let (id, width, height) = Texture::load_texture(&texture_path, &texture_config)?;
+        let (id, width, height) = Texture::load_texture(&texture_path, texture_config)?;
         let texture = Texture {
             id,
             texture_path: texture_path.into_os_string(),
-            texture_type: texture_config.texture_type.clone(),
+            texture_type: texture_config.texture_type,
             width,
             height,
         };
         Ok(texture)
     }
 
-    pub fn load_texture(texture_path: &PathBuf, texture_config: &TextureConfig) -> Result<(GLuint, u32, u32), Error> {
+    pub fn load_texture(
+        texture_path: &PathBuf,
+        texture_config: &TextureConfig,
+    ) -> Result<(GLuint, u32, u32), Error> {
         let mut texture_id: GLuint = 0;
 
         let img = image::open(texture_path)?;
@@ -84,7 +82,11 @@ impl Texture {
 
         let color_type = img.color();
 
-        let img = if texture_config.flip_v { img.flipv() } else { img };
+        let img = if texture_config.flip_v {
+            img.flipv()
+        } else {
+            img
+        };
 
         unsafe {
             let internal_format: c_uint;
@@ -95,7 +97,11 @@ impl Texture {
                     data_format = gl::RED;
                 }
                 ColorType::Rgb8 => {
-                    internal_format = if texture_config.gamma_correction { gl::SRGB } else { gl::RGB };
+                    internal_format = if texture_config.gamma_correction {
+                        gl::SRGB
+                    } else {
+                        gl::RGB
+                    };
                     data_format = gl::RGB;
                 }
                 ColorType::Rgba8 => {
@@ -131,14 +137,22 @@ impl Texture {
             );
             gl::GenerateMipmap(gl::TEXTURE_2D);
 
-            let param = if data_format == gl::RGBA { gl::CLAMP_TO_EDGE } else { gl::REPEAT };
+            let param = if data_format == gl::RGBA {
+                gl::CLAMP_TO_EDGE
+            } else {
+                gl::REPEAT
+            };
 
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, param as GLint);
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, param as GLint);
 
             match texture_config.filter {
                 TextureFilter::Linear => {
-                    gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR_MIPMAP_LINEAR as GLint);
+                    gl::TexParameteri(
+                        gl::TEXTURE_2D,
+                        gl::TEXTURE_MIN_FILTER,
+                        gl::LINEAR_MIPMAP_LINEAR as GLint,
+                    );
                     gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as GLint);
                 }
                 TextureFilter::Nearest => {

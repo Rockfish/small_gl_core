@@ -6,7 +6,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-glad-gl = { path = "./glad-gl" }
 glam = "0.24.2"
 image = "0.24.7"
 russimp = "2.0.6"
