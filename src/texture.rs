@@ -5,11 +5,18 @@ use image::ColorType;
 use std::ffi::{c_uint, OsString};
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
+use std::rc::Rc;
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub enum TextureFilter {
     Linear,
     Nearest,
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum TextureWrap {
+    Clamp,
+    Repeat,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -20,7 +27,7 @@ pub enum TextureType {
     Ambient,
     Emissive,
     Height,
-    Normals,
+    Normal,
     Shininess,
     Opacity,
     Displacement,
@@ -34,22 +41,76 @@ impl Display for TextureType {
         match self {
             TextureType::Diffuse => write!(f, "texture_diffuse"),
             TextureType::Specular => write!(f, "texture_specular"),
-            TextureType::Normals => write!(f, "texture_normal"),
+            TextureType::Ambient => write!(f, "texture_ambient"),
+            TextureType::Emissive => write!(f, "texture_emissive"),
+            TextureType::Normal => write!(f, "texture_normal"),
             TextureType::Height => write!(f, "texture_height"),
-            _ => todo!(),
+            TextureType::Shininess => write!(f, "texture_shininess"),
+            TextureType::Opacity => write!(f, "texture_opacity"),
+            TextureType::Displacement => write!(f, "texture_displacement"),
+            TextureType::Lightmap => write!(f, "texture_lightmap"),
+            TextureType::Reflection => write!(f, "texture_reflection"),
+            TextureType::Unknown => write!(f, "texture_unknown"),
+            TextureType::None => write!(f, "texture_none"),
         }
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct TextureConfig {
+    pub texture_type: TextureType,
+    pub filter: TextureFilter,
+    pub wrap: TextureWrap,
     pub flip_v: bool,
     pub gamma_correction: bool,
-    pub filter: TextureFilter,
-    pub texture_type: TextureType,
 }
 
-#[derive(Debug)]
+impl Default for TextureConfig {
+    fn default() -> Self {
+        TextureConfig::new()
+    }
+}
+
+impl TextureConfig {
+
+    pub fn new() -> Self {
+        TextureConfig {
+            texture_type: TextureType::Diffuse,
+            filter: TextureFilter::Linear,
+            wrap: TextureWrap::Clamp,
+            flip_v: false,
+            gamma_correction: false,
+        }
+    }
+
+    pub fn set_type(mut self, texture_type: TextureType) -> Self {
+        self.texture_type = texture_type;
+        self
+    }
+
+    pub fn set_filter(mut self, filter_type: TextureFilter) -> Self {
+        self.filter = filter_type;
+        self
+    }
+
+    pub fn set_wrap(mut self, wrap_type: TextureWrap) -> Self {
+        self.wrap = wrap_type;
+        self
+    }
+
+    pub fn set_flipv(mut self, flip_v: bool) -> Self {
+        self.flip_v = flip_v;
+        self
+    }
+
+    pub fn set_gamma_correction(mut self, correct_gamma: bool) -> Self {
+        self.gamma_correction = correct_gamma;
+        self
+    }
+}
+
+
+#[derive(Debug, Clone)]
 pub struct Texture {
     pub id: u32,
     pub texture_path: OsString,
@@ -58,12 +119,19 @@ pub struct Texture {
     pub height: u32,
 }
 
+#[derive(Debug, Clone)]
+pub struct TextureSample {
+    pub sample_name: String,
+    pub texture: Rc<Texture>,
+}
+
 impl Texture {
-    pub fn new(texture_path: PathBuf, texture_config: &TextureConfig) -> Result<Texture, Error> {
-        let (id, width, height) = Texture::load_texture(&texture_path, texture_config)?;
+    pub fn new(texture_path: impl Into<OsString>, texture_config: &TextureConfig) -> Result<Texture, Error> {
+        let path = PathBuf::from(texture_path.into());
+        let (id, width, height) = Texture::load_texture(&path, texture_config)?;
         let texture = Texture {
             id,
-            texture_path: texture_path.into_os_string(),
+            texture_path: path.into(),
             texture_type: texture_config.texture_type,
             width,
             height,
@@ -123,6 +191,10 @@ impl Texture {
             };
 
             gl::GenTextures(1, &mut texture_id);
+
+            // not needed here
+            // gl::ActiveTexture(gl::TEXTURE0 + texture_config.texture_unit);
+
             gl::BindTexture(gl::TEXTURE_2D, texture_id);
             gl::TexImage2D(
                 gl::TEXTURE_2D,
@@ -137,14 +209,13 @@ impl Texture {
             );
             gl::GenerateMipmap(gl::TEXTURE_2D);
 
-            let param = if data_format == gl::RGBA {
-                gl::CLAMP_TO_EDGE
-            } else {
-                gl::REPEAT
+            let wrap_param = match texture_config.wrap {
+                TextureWrap::Clamp => gl::CLAMP_TO_EDGE,
+                TextureWrap::Repeat => gl::REPEAT
             };
 
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, param as GLint);
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, param as GLint);
+            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, wrap_param as GLint);
+            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, wrap_param as GLint);
 
             match texture_config.filter {
                 TextureFilter::Linear => {

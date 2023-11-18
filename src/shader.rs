@@ -20,7 +20,15 @@ pub struct Shader {
 }
 
 impl Shader {
+
     pub fn new(
+        vert_file: impl Into<String>,
+        frag_file: impl Into<String>,
+    ) -> Result<Self, String> {
+       Shader::new_with_geom(vert_file, frag_file, None::<String>)
+    }
+
+    pub fn new_with_geom(
         vert_file: impl Into<String>,
         frag_file: impl Into<String>,
         geom_file: Option<impl Into<String>>,
@@ -114,6 +122,13 @@ impl Shader {
         }
         self.set_mat4("projection", projection);
         self.set_mat4("view", view);
+    }
+
+    pub fn get_uniform_location(&self, name: &str) -> GLint {
+        unsafe {
+            let c_string = c_string!(name);
+            gl::GetUniformLocation(self.id, c_string.as_ptr())
+        }
     }
 
     // utility uniform functions

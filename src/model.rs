@@ -1,9 +1,10 @@
+use std::ops::Add;
 use crate::assimp_scene::*;
 use crate::error::Error;
 use crate::error::Error::ModelError;
 use crate::model_mesh::{ModelMesh, ModelVertex};
 use crate::shader::Shader;
-use crate::texture::{Texture, TextureConfig, TextureFilter, TextureType};
+use crate::texture::{Texture, TextureConfig, TextureFilter, TextureSample, TextureType, TextureWrap};
 use glam::*;
 use russimp::scene::*;
 use russimp::sys::*;
@@ -11,6 +12,85 @@ use std::os::raw::c_uint;
 use std::path::PathBuf;
 use std::ptr::*;
 use std::rc::Rc;
+
+// Animation
+// aiVector3D => Vec3
+
+#[repr(u32)]
+#[derive(Debug, Clone, PartialEq)]
+pub enum AnimationBehaviour {
+    DEFAULT= 0,
+    CONSTANT= 1,
+    LINEAR= 2,
+    REPEAT= 3,
+    Force32Bit= 2147483647,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct VectorKey {
+    pub time: f64,
+    pub value: Vec3
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct QuatKey {
+    pub time: f64,
+    pub value: Quat,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct MeshKey {
+    pub time: f64,
+    pub value: u32,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct MeshMorphKey {
+    pub time: f64,
+    pub values: Vec<u32>,
+    pub weights: Vec<f64>,
+    pub num_values_and_weights: u32,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct NodeAnim {
+    pub node_name: String,  // Rc<str> ?
+    pub num_position_keys: u32,
+    pub position_keys: Vec<VectorKey>,
+    pub num_rotation_keys: u32,
+    pub rotation_keys: Vec<QuatKey>,
+    pub num_scaling_keys: u32,
+    pub scaling_keys: Vec<VectorKey>,
+    pub pre_state: AnimationBehaviour,
+    pub m_post_state: AnimationBehaviour,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct MeshAnim {
+    pub name: aiString,
+    pub num_keys: u32,
+    pub keys: Vec<MeshKey>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct MeshMorphAnim {
+    pub name: String,
+    pub num_keys: u32,
+    pub keys: Vec<MeshMorphKey>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Animation {
+    pub name: String,
+    pub duration: f64,
+    pub ticks_per_second: f64,
+    pub num_channels: u32,
+    pub channels: Vec<NodeAnim>,
+    pub num_mesh_channels: u32,
+    pub mesh_channels: Vec<MeshAnim>,
+    pub num_morph_mesh_channels: u32,
+    pub morph_mesh_channels: Vec<MeshMorphAnim>,
+}
 
 // model data
 #[derive(Debug, Clone)]
@@ -21,7 +101,19 @@ pub struct Model {
 }
 
 impl Model {
-    pub fn render(&self, position: Vec3, angle: f32, scale: Vec3, _delta_time: f32) {
+    pub fn render(&self) {
+        for mesh in self.meshes.iter() {
+            mesh.render(&self.shader);
+        }
+    }
+
+    pub fn render_with_shader(&self, shader: &Rc<Shader>) {
+        for mesh in self.meshes.iter() {
+            mesh.render(shader);
+        }
+    }
+
+    pub fn render_with_transform(&self, position: Vec3, angle: f32, scale: Vec3, _delta_time: f32) {
         let mut model_transform = Mat4::from_translation(position);
         model_transform *= Mat4::from_axis_angle(vec3(0.0, 1.0, 0.0), angle.to_radians());
         model_transform *= Mat4::from_scale(scale);
@@ -37,12 +129,16 @@ impl Model {
 pub struct ModelBuilder {
     pub name: String,
     pub shader: Rc<Shader>,
-    pub textures_cache: Vec<Rc<Texture>>,
     pub meshes: Vec<ModelMesh>,
     pub filepath: String,
     pub directory: PathBuf,
     pub gamma_correction: bool,
     pub flip_v: bool,
+    pub textures_cache: Vec<Rc<Texture>>,
+    pub diffuse_count: u32,
+    pub specular_count: u32,
+    pub normal_count: u32,
+    pub height_count: u32,
 }
 
 impl ModelBuilder {
@@ -58,6 +154,10 @@ impl ModelBuilder {
             directory,
             gamma_correction: false,
             flip_v: false,
+            diffuse_count: 0,
+            specular_count: 0,
+            normal_count: 0,
+            height_count: 0,
         }
     }
 
@@ -139,7 +239,7 @@ impl ModelBuilder {
 
         let mut vertices: Vec<ModelVertex> = vec![];
         let mut indices: Vec<u32> = vec![];
-        let mut textures: Vec<Rc<Texture>> = vec![];
+        let mut textures: Vec<TextureSample> = vec![];
 
         let assimp_vertices = get_vec_from_parts(scene_mesh.mVertices, scene_mesh.mNumVertices);
         let assimp_normals = get_vec_from_parts(scene_mesh.mNormals, scene_mesh.mNumVertices);
@@ -168,13 +268,13 @@ impl ModelBuilder {
             // texture coordinates
             if !texture_coords.is_empty() {
                 // texture coordinates
-                vertex.tex_coords = vec2(texture_coords[i].x, texture_coords[i].y);
+                vertex.uv = vec2(texture_coords[i].x, texture_coords[i].y);
                 // tangent
                 vertex.tangent = assimp_tangents[i];
                 // bitangent
                 vertex.bi_tangent = assimp_bitangents[i];
             } else {
-                vertex.tex_coords = vec2(0.0, 0.0);
+                vertex.uv = vec2(0.0, 0.0);
             }
             vertices.push(vertex);
         }
@@ -182,7 +282,7 @@ impl ModelBuilder {
         let assimp_faces = unsafe {
             slice_from_raw_parts(scene_mesh.mFaces, scene_mesh.mNumFaces as usize).as_ref()
         }
-        .unwrap();
+            .unwrap();
 
         for i in 0..assimp_faces.len() {
             let face = assimp_faces[i];
@@ -196,7 +296,7 @@ impl ModelBuilder {
         let assimp_materials = unsafe {
             slice_from_raw_parts(scene.mMaterials, scene.mNumMaterials as usize).as_ref()
         }
-        .unwrap();
+            .unwrap();
         let material_index = scene_mesh.mMaterialIndex as usize;
         let assimp_material = assimp_materials[material_index];
 
@@ -208,19 +308,19 @@ impl ModelBuilder {
         // normal: texture_normalN
 
         // 1. diffuse maps
-        let diffuse_maps = self.load_material_textures(assimp_material, TextureType::Diffuse)?;
-        textures.extend(diffuse_maps);
+        let diffuse_textures = self.load_material_textures(assimp_material, TextureType::Diffuse)?;
+        textures.extend(diffuse_textures);
 
         // 2. specular maps
-        let specular_maps = self.load_material_textures(assimp_material, TextureType::Specular)?;
-        textures.extend(specular_maps);
+        let specular_textures = self.load_material_textures(assimp_material, TextureType::Specular)?;
+        textures.extend(specular_textures);
 
         // 3. normal maps
-        let normal_maps = self.load_material_textures(assimp_material, TextureType::Height)?;
-        textures.extend(normal_maps);
+        let normal_textures = self.load_material_textures(assimp_material, TextureType::Normal)?;
+        textures.extend(normal_textures);
 
         // 4. height maps
-        let height_maps = self.load_material_textures(assimp_material, TextureType::Ambient)?;
+        let height_maps = self.load_material_textures(assimp_material, TextureType::Height)?;
         textures.extend(height_maps);
 
         let mesh = ModelMesh::new(vertices, indices, textures);
@@ -231,39 +331,72 @@ impl ModelBuilder {
         &mut self,
         assimp_material: *mut aiMaterial,
         texture_type: TextureType,
-    ) -> Result<Vec<Rc<Texture>>, Error> {
-        let mut textures: Vec<Rc<Texture>> = vec![];
+    ) -> Result<Vec<TextureSample>, Error> {
+        let mut textures: Vec<TextureSample> = vec![];
 
         let texture_count =
             unsafe { aiGetMaterialTextureCount(assimp_material, texture_type.into()) };
 
+        // println!("loading texture_count: {}", texture_count);
+
         for i in 0..texture_count {
             let texture_filename = unsafe { get_material_texture_filename(assimp_material, texture_type, i)? };
             let full_path = self.directory.join(&texture_filename);
+
+            // println!("model texture full_path: {:?}", full_path);
 
             let cached_texture = self
                 .textures_cache
                 .iter()
                 .find(|t| t.texture_path == full_path.clone().into_os_string());
 
-            match cached_texture {
-                None => {
-                    let texture = Rc::new(Texture::new(
-                        full_path,
-                        &TextureConfig {
-                            flip_v: self.flip_v,
-                            gamma_correction: self.gamma_correction,
-                            filter: TextureFilter::Linear,
-                            texture_type,
-                        },
-                    )?);
-                    self.textures_cache.push(texture.clone());
-                    textures.push(texture.clone());
-                }
-                Some(texture) => textures.push(texture.clone()),
+            if cached_texture.is_some() {
+                continue;
             }
+
+            let sample_name = self.get_next_texture_name(texture_type);
+            let texture = Rc::new(Texture::new(
+                full_path,
+                &TextureConfig {
+                    flip_v: self.flip_v,
+                    gamma_correction: self.gamma_correction,
+                    filter: TextureFilter::Linear,
+                    wrap: TextureWrap::Clamp,
+                    texture_type,
+                },
+            )?);
+            self.textures_cache.push(texture.clone());
+            let texture_sample = TextureSample {
+                sample_name,
+                texture,
+            };
+            textures.push(texture_sample);
         }
         Ok(textures)
+    }
+
+    fn get_next_texture_name(&mut self, texture_type: TextureType) -> String {
+        let num = match texture_type {
+            TextureType::Diffuse => {
+                self.diffuse_count += 1;
+                self.diffuse_count
+            }
+            TextureType::Specular => {
+                self.specular_count += 1;
+                self.specular_count
+            }
+            TextureType::Normal => {
+                self.normal_count += 1;
+                self.normal_count
+            }
+            TextureType::Height => {
+                self.height_count += 1;
+                self.height_count
+            }
+            _ => todo!(),
+        };
+
+        texture_type.to_string().add(&num.to_string())
     }
 }
 

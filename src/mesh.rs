@@ -30,7 +30,7 @@ impl Color {
 #[repr(C, packed)]
 pub struct Vertex {
     pub position: Vec3,
-    pub tex_coords: Vec2,
+    pub uv: Vec2,
     pub color: Color,
 }
 
@@ -38,7 +38,7 @@ impl Vertex {
     pub fn new(position: Vec3, tex_coords: Vec2, color: Color) -> Vertex {
         Vertex {
             position,
-            tex_coords,
+            uv: tex_coords,
             color,
         }
     }
@@ -47,7 +47,7 @@ impl Default for Vertex {
     fn default() -> Self {
         Vertex {
             position: Default::default(),
-            tex_coords: Default::default(),
+            uv: Default::default(),
             color: Color::white(),
         }
     }
@@ -118,7 +118,7 @@ impl Mesh {
                 gl::FLOAT,
                 gl::FALSE,
                 mem::size_of::<Vertex>() as GLsizei,
-                mem::offset_of!(Vertex, tex_coords) as *const GLvoid,
+                mem::offset_of!(Vertex, uv) as *const GLvoid,
             );
 
             // vertex color

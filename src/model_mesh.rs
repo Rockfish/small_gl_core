@@ -1,16 +1,15 @@
 use crate::gl;
 use crate::gl::{GLsizei, GLsizeiptr, GLvoid};
 use crate::shader::Shader;
-use crate::texture::{Texture, TextureType};
+use crate::texture::{Texture, TextureSample};
 use glam::u32;
 use glam::*;
 use std::mem;
-use std::ops::Add;
 use std::rc::Rc;
 
 const MAX_BONE_INFLUENCE: usize = 4;
 const OFFSET_OF_NORMAL: usize = mem::offset_of!(ModelVertex, normal);
-const OFFSET_OF_TEXCOORDS: usize = mem::offset_of!(ModelVertex, tex_coords);
+const OFFSET_OF_TEXCOORDS: usize = mem::offset_of!(ModelVertex, uv);
 const OFFSET_OF_TANGENT: usize = mem::offset_of!(ModelVertex, tangent);
 const OFFSET_OF_BITANGENT: usize = mem::offset_of!(ModelVertex, bi_tangent);
 const OFFSET_OF_BONE_IDS: usize = mem::offset_of!(ModelVertex, bone_ids);
@@ -21,7 +20,7 @@ const OFFSET_OF_WEIGHTS: usize = mem::offset_of!(ModelVertex, bone_weights);
 pub struct ModelVertex {
     pub position: Vec3,
     pub normal: Vec3,
-    pub tex_coords: Vec2,
+    pub uv: Vec2,
     pub tangent: Vec3,
     pub bi_tangent: Vec3,
     pub bone_ids: [i32; MAX_BONE_INFLUENCE],
@@ -33,7 +32,7 @@ impl ModelVertex {
         ModelVertex {
             position: Vec3::default(),
             normal: Vec3::default(),
-            tex_coords: Vec2::default(),
+            uv: Vec2::default(),
             tangent: Vec3::default(),
             bi_tangent: Vec3::default(),
             bone_ids: [0; MAX_BONE_INFLUENCE],
@@ -51,7 +50,7 @@ impl Default for ModelVertex {
 pub struct ModelMesh {
     pub vertices: Vec<ModelVertex>,
     pub indices: Vec<u32>,
-    pub textures: Vec<Rc<Texture>>,
+    pub textures: Vec<TextureSample>,
     pub vao: u32,
     pub vbo: u32,
     pub ebo: u32,
@@ -61,7 +60,7 @@ impl ModelMesh {
     pub fn new(
         vertices: Vec<ModelVertex>,
         indices: Vec<u32>,
-        textures: Vec<Rc<Texture>>,
+        textures: Vec<TextureSample>,
     ) -> ModelMesh {
         let mut mesh = ModelMesh {
             vertices,
@@ -76,48 +75,15 @@ impl ModelMesh {
     }
 
     pub fn render(&self, shader: &Rc<Shader>) {
-        // bind appropriate textures
-        let mut diffuse_count: u32 = 0;
-        let mut specular_count: u32 = 0;
-        let mut normal_count: u32 = 0;
-        let mut height_count: u32 = 0;
-
         unsafe {
             // set the location and binding for all the textures
-            for (texture_unit, texture) in self.textures.iter().enumerate() {
+            for (texture_count, texture_sample) in self.textures.iter().enumerate() {
                 // active proper texture unit before binding
-                gl::ActiveTexture(gl::TEXTURE0 + texture_unit as u32);
+                gl::ActiveTexture(gl::TEXTURE0 + texture_count as u32);
+                // bind the texture to the texture unit
+                gl::BindTexture(gl::TEXTURE_2D, texture_sample.texture.id);
 
-                // retrieve texture number (the N in diffuse_textureN)
-                let num = match texture.texture_type {
-                    TextureType::Diffuse => {
-                        diffuse_count += 1;
-                        diffuse_count
-                    }
-                    TextureType::Specular => {
-                        specular_count += 1;
-                        specular_count
-                    }
-                    TextureType::Normals => {
-                        normal_count += 1;
-                        normal_count
-                    }
-                    TextureType::Height => {
-                        height_count += 1;
-                        height_count
-                    }
-                    _ => todo!(),
-                };
-
-                // now set the sampler to the correct texture unit (location)
-                let texture_name = texture
-                    .texture_type
-                    .to_string()
-                    .clone()
-                    .add(&num.to_string());
-                shader.set_int(&texture_name, texture_unit as i32);
-
-                gl::BindTexture(gl::TEXTURE_2D, texture.id);
+                shader.set_int(&texture_sample.sample_name, texture_count as i32);
             }
 
             gl::BindVertexArray(self.vao);
@@ -255,7 +221,7 @@ pub fn print_model_mesh(mesh: &ModelMesh) {
     println!("OFFSET_OF_NORMAL: {}", mem::offset_of!(ModelVertex, normal));
     println!(
         "OFFSET_OF_TEXCOORDS: {}",
-        mem::offset_of!(ModelVertex, tex_coords)
+        mem::offset_of!(ModelVertex, uv)
     );
     println!(
         "OFFSET_OF_TANGENT: {}",

@@ -21,6 +21,11 @@ macro_rules! c_string {
 }
 
 #[macro_export]
+macro_rules! null {
+    () => {std::ptr::null::<GLvoid>()};
+}
+
+#[macro_export]
 macro_rules! size_of_floats {
     ($value:expr) => {
         ($value * mem::size_of::<f32>())
@@ -28,7 +33,7 @@ macro_rules! size_of_floats {
 }
 
 #[macro_export]
-macro_rules! size_of_uint {
+macro_rules! size_of_uints {
     ($value:expr) => {
         ($value * mem::size_of::<u32>())
     };
