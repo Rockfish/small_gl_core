@@ -8,4 +8,17 @@ edition = "2021"
 [dependencies]
 glam = "0.24.2"
 image = "0.24.7"
-russimp = "2.0.6"
+#russimp = "2.0.6"
+
+#russimp = { git = " https://github.com/jkvargas/russimp.git" }
+russimp = { path = "../russimp_rockfish" }
+log = "0.4.20"
+
+[dev-dependencies]
+glfw = "0.54.0"
+log = "0.4.20"
+
+[[example]]
+name = "sample_animation"
+path = "examples/sample_animation/sample_animation.rs"
+

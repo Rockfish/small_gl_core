@@ -35,11 +35,30 @@ impl ModelVertex {
             uv: Vec2::default(),
             tangent: Vec3::default(),
             bi_tangent: Vec3::default(),
-            bone_ids: [0; MAX_BONE_INFLUENCE],
+            bone_ids: [-1; MAX_BONE_INFLUENCE],
             bone_weights: [0.0; MAX_BONE_INFLUENCE],
         }
     }
+
+    pub fn set_bone_data_to_default(&mut self) {
+        for i in 0..MAX_BONE_INFLUENCE {
+            self.bone_ids[i] = -1;
+            self.bone_weights[i] = 0.0;
+        }
+    }
+
+    pub fn set_bone_data(&mut self, bone_id: i32, weight: f32) {
+        //set first available free spot if there is any
+        for i in 0..MAX_BONE_INFLUENCE {
+            if self.bone_ids[i] < 0 {
+                self.bone_ids[i] = bone_id;
+                self.bone_weights[i] = weight;
+                break;
+            }
+        }
+    }
 }
+
 impl Default for ModelVertex {
     fn default() -> Self {
         Self::new()

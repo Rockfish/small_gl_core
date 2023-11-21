@@ -16,6 +16,9 @@ pub mod model_mesh;
 pub mod shader;
 pub mod sprite_model;
 pub mod texture;
+mod bone;
+mod animation;
+mod animator;
 
 type ShaderId = u32;
 
