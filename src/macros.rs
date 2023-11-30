@@ -22,7 +22,9 @@ macro_rules! c_string {
 
 #[macro_export]
 macro_rules! null {
-    () => {std::ptr::null::<GLvoid>()};
+    () => {
+        std::ptr::null::<GLvoid>()
+    };
 }
 
 #[macro_export]

@@ -1,24 +1,27 @@
+use crate::model_animation::convert_to_mat4;
+use crate::assimp_scene::*;
+use crate::bone_data::BoneData;
+use crate::error::Error;
+use crate::error::Error::{ModelError, SceneError};
+use crate::model_mesh::{ModelMesh, ModelVertex};
+use crate::shader::Shader;
+use crate::texture::{
+    Texture, TextureConfig, TextureFilter, TextureSample, TextureType, TextureWrap,
+};
+use glam::*;
+use image::codecs::png::CompressionType::Default;
+use russimp::animation::Animation;
+use russimp::scene::*;
+use russimp::sys::*;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::ffi::{c_char, CStr};
 use std::ops::Add;
-use crate::assimp_scene::*;
-use crate::error::Error;
-use crate::error::Error::ModelError;
-use crate::model_mesh::{ModelMesh, ModelVertex};
-use crate::shader::Shader;
-use crate::texture::{Texture, TextureConfig, TextureFilter, TextureSample, TextureType, TextureWrap};
-use glam::*;
-use russimp::scene::*;
-use russimp::sys::*;
 use std::os::raw::c_uint;
 use std::path::PathBuf;
 use std::ptr::*;
 use std::rc::Rc;
-use image::codecs::png::CompressionType::Default;
-use russimp::animation::Animation;
-use crate::animation::convert_to_mat4;
-use crate::bone::BoneInfo;
+use russimp::utils;
 
 // Animation
 // aiVector3D => Vec3
@@ -99,13 +102,15 @@ use crate::bone::BoneInfo;
 //     pub morph_mesh_channels: Vec<MeshMorphAnim>,
 // }
 
+pub type BoneName = String;
+
 // model data
 #[derive(Debug, Clone)]
 pub struct Model {
     pub name: Rc<str>,
-    pub shader: Rc<Shader>,  // todo: remove shader from model since which shader depends the render context
+    pub shader: Rc<Shader>, // todo: remove shader from model since which shader depends the render context
     pub meshes: Rc<Vec<ModelMesh>>,
-    pub bone_info_map: Rc<RefCell<HashMap<String, BoneInfo>>>,
+    pub bone_data_map: Rc<RefCell<HashMap<BoneName, BoneData>>>,
     pub bone_count: i32,
     // pub animations: Rc<Vec<Animation>>,
 }
@@ -140,7 +145,7 @@ pub struct ModelBuilder {
     pub name: String,
     pub shader: Rc<Shader>,
     pub meshes: Vec<ModelMesh>,
-    pub bone_info_map: Rc<RefCell<HashMap<String, BoneInfo>>>,
+    pub bone_data_map: Rc<RefCell<HashMap<String, BoneData>>>,
     pub bone_count: i32,
     // pub animations: Vec<Animation>,
     pub filepath: String,
@@ -163,7 +168,7 @@ impl ModelBuilder {
             shader,
             textures_cache: vec![],
             meshes: vec![],
-            bone_info_map: Rc::new(RefCell::new(HashMap::new())),
+            bone_data_map: Rc::new(RefCell::new(HashMap::new())),
             bone_count: 0,
             // animations: vec![],
             filepath,
@@ -188,12 +193,30 @@ impl ModelBuilder {
     }
 
     pub fn build(mut self) -> Result<Model, Error> {
-        self.load_model()?;
+        let assimp_scene = AssimpScene::load_assimp_scene(self.filepath.clone())?;
+        self.load_model(&assimp_scene)?;
         let model = Model {
             name: Rc::from(self.name),
             shader: self.shader,
             meshes: Rc::from(self.meshes),
-            bone_info_map: self.bone_info_map,
+            bone_data_map: self.bone_data_map,
+            bone_count: self.bone_count,
+            // animations: Rc::from(self.animations),
+        };
+
+        Ok(model)
+    }
+
+    pub fn build_with_scene(mut self, assimp_scene: &AssimpScene) -> Result<Model, Error> {
+        self.load_model(assimp_scene)?;
+
+        // println!("meshes: \n {:?}", &self.meshes);
+
+        let model = Model {
+            name: Rc::from(self.name),
+            shader: self.shader,
+            meshes: Rc::from(self.meshes),
+            bone_data_map: self.bone_data_map,
             bone_count: self.bone_count,
             // animations: Rc::from(self.animations),
         };
@@ -202,56 +225,12 @@ impl ModelBuilder {
     }
 
     // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
-    fn load_model(&mut self) -> Result<(), Error> {
-        let path = self.filepath.clone();
-        let scene = AssimpScene::from_file(
-            &path,
-            vec![
-                PostProcess::Triangulate,
-                PostProcess::GenerateSmoothNormals,
-                PostProcess::FlipUVs,
-                PostProcess::CalculateTangentSpace,
-                // PostProcess::JoinIdenticalVertices,
-                // PostProcess::SortByPrimitiveType,
-                // PostProcess::EmbedTextures,
-            ],
-        );
-
-        match scene {
-            Ok(scene) => {
-                self.walk_animation_nodes(scene.assimp_scene);
-                self.process_node(scene.assimp_scene.mRootNode, scene.assimp_scene)
-            },
-            Err(err) => Err(ModelError(err)),
-        }
-    }
-
-    // TODO: temp
-    fn walk_animation_nodes(&self, scene: &aiScene) {
-        let slice = slice_from_raw_parts(scene.mAnimations, scene.mNumAnimations as usize);
-        match unsafe { slice.as_ref() } {
-            None => {}
-            Some(animations) => {
-                for i in 0..animations.len() {
-                    if unsafe {(*animations[i]).mName.length} > 0 {
-                        let name: String = unsafe { (*animations[i]).mName.into() };
-                        println!("animation name: {:?}", name);
-                    }
-                    let animation: Animation = unsafe { (&(*animations[i])).into() };
-                    // println!("animation: {:?}", animation);
-                    for node in animation.channels {
-                        println!("NodeAnim: {:?}", node.name)
-                    }
-                    println!();
-                    for morph in animation.morph_mesh_channels {
-                        println!("MeshMorphAnim: {:?}", morph.name)
-                    }
-                    println!();
-                    for mesh in animation.mesh_channels {
-                        println!("MeshAnim: {:?}", mesh.name)
-                    }
-                    println!();
-                }
+    fn load_model(&mut self, scene: &AssimpScene) -> Result<(), Error> {
+        let option_ai_scene = unsafe { scene.assimp_scene.as_ref() };
+        match option_ai_scene {
+            None => Err(SceneError("Error getting scene".to_string())),
+            Some(ai_scene) => {
+                self.process_node(ai_scene.mRootNode, ai_scene)
             }
         }
     }
@@ -264,8 +243,14 @@ impl ModelBuilder {
         let slice = slice_from_raw_parts(scene.mMeshes, scene.mNumMeshes as usize);
         let assimp_meshes = unsafe { slice.as_ref() }.unwrap();
 
-        for i in 0..assimp_meshes.len() {
-            let mesh = self.process_mesh(assimp_meshes[i], scene);
+        let node = unsafe{ node.as_ref() }.unwrap();
+        let node_meshes: Vec<u32> = utils::get_raw_vec(node.mMeshes, node.mNumMeshes);
+
+        for i in 0..node_meshes.len() {
+
+            let mesh = assimp_meshes[node_meshes[i] as usize];
+
+            let mesh = self.process_mesh(mesh, scene);
             self.meshes.push(mesh?);
         }
 
@@ -293,45 +278,44 @@ impl ModelBuilder {
         let mut indices: Vec<u32> = vec![];
         let mut textures: Vec<TextureSample> = vec![];
 
-        let vertex_vecs = get_vec_from_parts(ai_mesh.mVertices, ai_mesh.mNumVertices);
-        let normal_vecs = get_vec_from_parts(ai_mesh.mNormals, ai_mesh.mNumVertices);
-        let tangent_vecs = get_vec_from_parts(ai_mesh.mTangents, ai_mesh.mNumVertices);
-        let bitangents_vecs = get_vec_from_parts(ai_mesh.mBitangents, ai_mesh.mNumVertices);
+        let vertex_vec = get_vec_from_parts(ai_mesh.mVertices, ai_mesh.mNumVertices);
+        let normal_vec = get_vec_from_parts(ai_mesh.mNormals, ai_mesh.mNumVertices);
+        let tangent_vec = get_vec_from_parts(ai_mesh.mTangents, ai_mesh.mNumVertices);
+        let bitangents_vec = get_vec_from_parts(ai_mesh.mBitangents, ai_mesh.mNumVertices);
 
         // a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't
         // use models where a vertex can have multiple texture coordinates so we always take the first set (0).
         let texture_coords = if !ai_mesh.mTextureCoords.is_empty() {
-            get_vec_from_parts(ai_mesh.mTextureCoords[0], vertex_vecs.len() as u32)
+            get_vec_from_parts(ai_mesh.mTextureCoords[0], vertex_vec.len() as u32)
         } else {
             vec![]
         };
 
-        for i in 0..vertex_vecs.len() {
+        for i in 0..vertex_vec.len() {
             let mut vertex = ModelVertex::new();
 
             // positions
-            vertex.position = vertex_vecs[i]; // Vec3 has Copy trait
+            vertex.position = vertex_vec[i]; // Vec3 has Copy trait
 
             // normals
-            if !normal_vecs.is_empty() {
-                vertex.normal = normal_vecs[i];
+            if !normal_vec.is_empty() {
+                vertex.normal = normal_vec[i];
             }
 
             // texture coordinates
             if !texture_coords.is_empty() {
                 vertex.uv = vec2(texture_coords[i].x, texture_coords[i].y);
-                vertex.tangent = tangent_vecs[i];
-                vertex.bi_tangent = bitangents_vecs[i];
+                vertex.tangent = tangent_vec[i];
+                vertex.bi_tangent = bitangents_vec[i];
             } else {
                 vertex.uv = vec2(0.0, 0.0);
             }
             vertices.push(vertex);
         }
         // now walk through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
-        let assimp_faces = unsafe {
-            slice_from_raw_parts(ai_mesh.mFaces, ai_mesh.mNumFaces as usize).as_ref()
-        }
-            .unwrap();
+        let assimp_faces =
+            unsafe { slice_from_raw_parts(ai_mesh.mFaces, ai_mesh.mNumFaces as usize).as_ref() }
+                .unwrap();
 
         for i in 0..assimp_faces.len() {
             let face = assimp_faces[i];
@@ -345,7 +329,7 @@ impl ModelBuilder {
         let assimp_materials = unsafe {
             slice_from_raw_parts(ai_scene.mMaterials, ai_scene.mNumMaterials as usize).as_ref()
         }
-            .unwrap();
+        .unwrap();
         let material_index = ai_mesh.mMaterialIndex as usize;
         let assimp_material = assimp_materials[material_index];
 
@@ -357,11 +341,13 @@ impl ModelBuilder {
         // normal: texture_normalN
 
         // 1. diffuse maps
-        let diffuse_textures = self.load_material_textures(assimp_material, TextureType::Diffuse)?;
+        let diffuse_textures =
+            self.load_material_textures(assimp_material, TextureType::Diffuse)?;
         textures.extend(diffuse_textures);
 
         // 2. specular maps
-        let specular_textures = self.load_material_textures(assimp_material, TextureType::Specular)?;
+        let specular_textures =
+            self.load_material_textures(assimp_material, TextureType::Specular)?;
         textures.extend(specular_textures);
 
         // 3. normal maps
@@ -372,36 +358,62 @@ impl ModelBuilder {
         let height_maps = self.load_material_textures(assimp_material, TextureType::Height)?;
         textures.extend(height_maps);
 
+        let name: String = ai_mesh.mName.into();
+
+        println!("mesh name: {}", &name);
+
         self.extract_bone_weights_for_vertices(&mut vertices, &ai_mesh);
 
-        let mesh = ModelMesh::new(vertices, indices, textures);
+        let mesh = ModelMesh::new(name, vertices, indices, textures);
         Ok(mesh)
     }
 
-    fn extract_bone_weights_for_vertices(&mut self, vertices: &mut Vec<ModelVertex>, ai_mesh: &aiMesh)  {
-        let bones: Vec<russimp::bone::Bone> = russimp::utils::get_vec_from_raw(ai_mesh.mBones, ai_mesh.mNumBones);
+    fn extract_bone_weights_for_vertices(
+        &mut self,
+        vertices: &mut Vec<ModelVertex>,
+        ai_mesh: &aiMesh,
+    ) {
+        // russimp bones are similar to BoneInfo
+        let bones: Vec<russimp::bone::Bone> =
+            russimp::utils::get_vec_from_raw(ai_mesh.mBones, ai_mesh.mNumBones);
+
+        let mut bone_info_map = self.bone_data_map.borrow_mut();
+
         for bone in bones {
+
             let mut bone_id = -1;
-            match self.bone_info_map.borrow().get(&bone.name) {
+
+            match bone_info_map.get(&bone.name) {
+
                 None => {
-                    let bone_info = BoneInfo {
-                        id: self.bone_count,
+                    let bone_info = BoneData {
+                        name: bone.name.clone(),
+                        bone_index: self.bone_count,
                         offset: convert_to_mat4(&bone.offset_matrix),
                     };
-                    self.bone_info_map.borrow_mut().insert(bone.name.clone(), bone_info);
+                    bone_info_map.insert(bone.name.clone(), bone_info);
                     bone_id = self.bone_count;
                     self.bone_count += 1;
                 }
+
                 Some(bone_info) => {
-                    bone_id = bone_info.id;
+                    bone_id = bone_info.bone_index;
                 }
             }
-            let bone_weights = bone.weights;
-            for bone_weight in bone_weights {
+
+            let mut last_bone_id = -1;
+            for bone_weight in bone.weights {
+
                 let vertex_id = bone_weight.vertex_id as usize;
                 let weight = bone_weight.weight;
+
                 assert!(vertex_id <= vertices.len());
+
                 vertices[vertex_id].set_bone_data(bone_id, weight);
+                if bone_id != last_bone_id {
+                    println!("vertex_id: {}  bone_id: {}  weight: {}", vertex_id, bone_id, weight);
+                    last_bone_id = bone_id;
+                }
             }
         }
     }
@@ -419,7 +431,8 @@ impl ModelBuilder {
         // println!("loading texture_count: {}", texture_count);
 
         for i in 0..texture_count {
-            let texture_filename = unsafe { get_material_texture_filename(assimp_material, texture_type, i)? };
+            let texture_filename =
+                unsafe { get_material_texture_filename(assimp_material, texture_type, i)? };
             let full_path = self.directory.join(&texture_filename);
 
             // println!("model texture full_path: {:?}", full_path);

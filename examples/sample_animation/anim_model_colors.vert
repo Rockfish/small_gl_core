@@ -16,12 +16,12 @@ const int MAX_BONES = 100;
 const int MAX_BONE_INFLUENCE = 4;
 uniform mat4 finalBonesMatrices[MAX_BONES];
 
-out vec2 TexCoords;
+//out vec2 TexCoords;
+flat out int fragColorId;
 
 void main()
 {
     vec4 totalPosition = vec4(0.0f);
-//    vec4 totalPosition = vec4(pos, 1.0f);
 
     for(int i = 0 ; i < MAX_BONE_INFLUENCE ; i++)
     {
@@ -42,5 +42,7 @@ void main()
 
     gl_Position =  projection * view * model * totalPosition;
 
-	TexCoords = tex;
+//	TexCoords = tex;
+
+    fragColorId = boneIds[0];
 }

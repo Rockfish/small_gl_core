@@ -10,6 +10,7 @@ use std::mem::MaybeUninit;
 use std::os::raw::c_uint;
 
 use crate::error::Error;
+use crate::error::Error::ModelError;
 use crate::texture::TextureType;
 use russimp::scene::*;
 use russimp::sys::*;
@@ -33,28 +34,50 @@ type aiTextureType = u32;
 
 // This is just a lightweight wrapper around aiScene
 #[derive(Debug)]
-pub struct AssimpScene<'a> {
-    pub assimp_scene: &'a aiScene,
+pub struct AssimpScene {
+    pub assimp_scene: *const aiScene,
 }
 
-impl AssimpScene<'_> {
-    pub fn from_file(file_path: &str, flags: PostProcessSteps) -> Russult<AssimpScene> {
+impl AssimpScene {
+    pub fn load_assimp_scene(file_path: impl Into<String>) -> Result<AssimpScene, Error> {
+        let scene = AssimpScene::from_file(
+            file_path.into(),
+            vec![
+                PostProcess::Triangulate,
+                PostProcess::GenerateSmoothNormals,
+                PostProcess::FlipUVs,
+                PostProcess::CalculateTangentSpace,
+                // PostProcess::JoinIdenticalVertices,
+                // PostProcess::SortByPrimitiveType,
+                // PostProcess::EmbedTextures,
+            ],
+        );
+
+        let assimp_scene = scene?;
+        Ok(assimp_scene)
+    }
+
+    pub fn from_file(
+        file_path: String,
+        flags: PostProcessSteps,
+    ) -> Result<AssimpScene, RussimpError> {
         let bitwise_flag = flags.into_iter().fold(0, |acc, x| acc | (x as u32));
         let file_path = CString::new(file_path).unwrap();
 
         let raw_scene = AssimpScene::get_scene_from_file(file_path, bitwise_flag);
 
-        match raw_scene {
-            None => Err(AssimpScene::get_error()),
-            Some(raw_scene) => Ok(AssimpScene {
-                assimp_scene: raw_scene,
-            }),
-        }
+        // if raw_scene.is_some() {
+        //     return Ok(AssimpScene{assimp_scene: raw_scene.unwrap()});
+        // }
+        // Err(AssimpScene::get_error())
+        Ok(AssimpScene {
+            assimp_scene: raw_scene,
+        })
     }
 
     #[inline]
-    fn get_scene_from_file<'a>(string: CString, flags: u32) -> Option<&'a aiScene> {
-        unsafe { aiImportFile(string.as_ptr(), flags).as_ref() }
+    fn get_scene_from_file<'a>(string: CString, flags: u32) -> *const aiScene {
+        unsafe { aiImportFile(string.as_ptr(), flags) }
     }
 
     fn get_error() -> RussimpError {
@@ -64,7 +87,7 @@ impl AssimpScene<'_> {
     }
 }
 
-impl Drop for AssimpScene<'_> {
+impl Drop for AssimpScene {
     fn drop(&mut self) {
         unsafe {
             aiReleaseImport(self.assimp_scene);
@@ -90,25 +113,23 @@ pub unsafe fn get_material_texture_filename(
     let mut flags = MaybeUninit::uninit();
 
     let result = aiGetMaterialTexture(
-            material,
-            texture_type.into(),
-            index,
-            path.as_mut_ptr(),
-            texture_mapping.as_mut_ptr(),
-            uv_index.as_mut_ptr(),
-            blend.as_mut_ptr(),
-            op.as_mut_ptr(),
-            map_mode.as_mut_ptr() as *mut _,
-            flags.as_mut_ptr(),
-        );
+        material,
+        texture_type.into(),
+        index,
+        path.as_mut_ptr(),
+        texture_mapping.as_mut_ptr(),
+        uv_index.as_mut_ptr(),
+        blend.as_mut_ptr(),
+        op.as_mut_ptr(),
+        map_mode.as_mut_ptr() as *mut _,
+        flags.as_mut_ptr(),
+    );
 
     if result == aiReturn_aiReturn_SUCCESS {
         let filename: String = unsafe { path.assume_init() }.into();
         return Ok(filename);
     }
-    Err(Error::TextureError(
-        "aiGetMaterialTexture Error: Texture not found".to_string(),
-    ))
+    Err(Error::TextureError("aiGetMaterialTexture Error: Texture not found".to_string()))
 }
 
 impl From<TextureType> for aiTextureType {

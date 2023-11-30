@@ -20,12 +20,8 @@ pub struct Shader {
 }
 
 impl Shader {
-
-    pub fn new(
-        vert_file: impl Into<String>,
-        frag_file: impl Into<String>,
-    ) -> Result<Self, String> {
-       Shader::new_with_geom(vert_file, frag_file, None::<String>)
+    pub fn new(vert_file: impl Into<String>, frag_file: impl Into<String>) -> Result<Self, String> {
+        Shader::new_with_geom(vert_file, frag_file, None::<String>)
     }
 
     pub fn new_with_geom(

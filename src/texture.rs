@@ -2,6 +2,7 @@ use crate::error::Error;
 use crate::gl;
 use crate::gl::{GLint, GLsizei, GLuint, GLvoid};
 use image::ColorType;
+use serde::{Deserialize, Serialize};
 use std::ffi::{c_uint, OsString};
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
@@ -19,7 +20,7 @@ pub enum TextureWrap {
     Repeat,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum TextureType {
     None,
     Diffuse,
@@ -56,7 +57,7 @@ impl Display for TextureType {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub struct TextureConfig {
     pub texture_type: TextureType,
     pub filter: TextureFilter,
@@ -72,7 +73,6 @@ impl Default for TextureConfig {
 }
 
 impl TextureConfig {
-
     pub fn new() -> Self {
         TextureConfig {
             texture_type: TextureType::Diffuse,
@@ -109,7 +109,6 @@ impl TextureConfig {
     }
 }
 
-
 #[derive(Debug, Clone)]
 pub struct Texture {
     pub id: u32,
@@ -126,16 +125,20 @@ pub struct TextureSample {
 }
 
 impl Texture {
-    pub fn new(texture_path: impl Into<OsString>, texture_config: &TextureConfig) -> Result<Texture, Error> {
+    pub fn new(
+        texture_path: impl Into<OsString>,
+        texture_config: &TextureConfig,
+    ) -> Result<Texture, Error> {
         let path = PathBuf::from(texture_path.into());
         let (id, width, height) = Texture::load_texture(&path, texture_config)?;
-        let texture = Texture {
-            id,
-            texture_path: path.into(),
-            texture_type: texture_config.texture_type,
-            width,
-            height,
-        };
+        let texture =
+            Texture {
+                id,
+                texture_path: path.into(),
+                texture_type: texture_config.texture_type,
+                width,
+                height,
+            };
         Ok(texture)
     }
 
@@ -211,7 +214,7 @@ impl Texture {
 
             let wrap_param = match texture_config.wrap {
                 TextureWrap::Clamp => gl::CLAMP_TO_EDGE,
-                TextureWrap::Repeat => gl::REPEAT
+                TextureWrap::Repeat => gl::REPEAT,
             };
 
             gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, wrap_param as GLint);

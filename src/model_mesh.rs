@@ -4,6 +4,7 @@ use crate::shader::Shader;
 use crate::texture::{Texture, TextureSample};
 use glam::u32;
 use glam::*;
+use serde::{Deserialize, Serialize};
 use std::mem;
 use std::rc::Rc;
 
@@ -15,13 +16,33 @@ const OFFSET_OF_BITANGENT: usize = mem::offset_of!(ModelVertex, bi_tangent);
 const OFFSET_OF_BONE_IDS: usize = mem::offset_of!(ModelVertex, bone_ids);
 const OFFSET_OF_WEIGHTS: usize = mem::offset_of!(ModelVertex, bone_weights);
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Serialize, Deserialize)]
+#[serde(remote = "Vec2")]
+pub struct Vec2Def {
+    pub x: f32,
+    pub y: f32,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(remote = "Vec3")]
+pub struct Vec3Def {
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+}
+
+#[derive(Debug, Copy, Clone, Deserialize, Serialize)]
 #[repr(C, packed)]
 pub struct ModelVertex {
+    #[serde(with = "Vec3Def")]
     pub position: Vec3,
+    #[serde(with = "Vec3Def")]
     pub normal: Vec3,
+    #[serde(with = "Vec2Def")]
     pub uv: Vec2,
+    #[serde(with = "Vec3Def")]
     pub tangent: Vec3,
+    #[serde(with = "Vec3Def")]
     pub bi_tangent: Vec3,
     pub bone_ids: [i32; MAX_BONE_INFLUENCE],
     pub bone_weights: [f32; MAX_BONE_INFLUENCE],
@@ -67,6 +88,7 @@ impl Default for ModelVertex {
 
 #[derive(Debug, Clone)]
 pub struct ModelMesh {
+    pub name: String,
     pub vertices: Vec<ModelVertex>,
     pub indices: Vec<u32>,
     pub textures: Vec<TextureSample>,
@@ -77,11 +99,13 @@ pub struct ModelMesh {
 
 impl ModelMesh {
     pub fn new(
+        name: impl Into<String>,
         vertices: Vec<ModelVertex>,
         indices: Vec<u32>,
         textures: Vec<TextureSample>,
     ) -> ModelMesh {
         let mut mesh = ModelMesh {
+            name: name.into(),
             vertices,
             indices,
             textures,
@@ -201,7 +225,7 @@ impl ModelMesh {
             gl::VertexAttribPointer(
                 5,
                 4,
-                gl::FLOAT,
+                gl::INT,
                 gl::FALSE,
                 mem::size_of::<ModelVertex>() as GLsizei,
                 (OFFSET_OF_BONE_IDS) as *const GLvoid,
@@ -238,10 +262,7 @@ pub fn print_model_mesh(mesh: &ModelMesh) {
 
     println!("size vertex: {}", mem::size_of::<ModelVertex>());
     println!("OFFSET_OF_NORMAL: {}", mem::offset_of!(ModelVertex, normal));
-    println!(
-        "OFFSET_OF_TEXCOORDS: {}",
-        mem::offset_of!(ModelVertex, uv)
-    );
+    println!("OFFSET_OF_TEXCOORDS: {}", mem::offset_of!(ModelVertex, uv));
     println!(
         "OFFSET_OF_TANGENT: {}",
         mem::offset_of!(ModelVertex, tangent)
