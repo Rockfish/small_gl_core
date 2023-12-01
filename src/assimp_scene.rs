@@ -47,6 +47,7 @@ impl AssimpScene {
                 PostProcess::GenerateSmoothNormals,
                 PostProcess::FlipUVs,
                 PostProcess::CalculateTangentSpace,
+                PostProcess::FixOrRemoveInvalidData,
                 // PostProcess::JoinIdenticalVertices,
                 // PostProcess::SortByPrimitiveType,
                 // PostProcess::EmbedTextures,

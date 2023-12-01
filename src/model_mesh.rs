@@ -16,33 +16,13 @@ const OFFSET_OF_BITANGENT: usize = mem::offset_of!(ModelVertex, bi_tangent);
 const OFFSET_OF_BONE_IDS: usize = mem::offset_of!(ModelVertex, bone_ids);
 const OFFSET_OF_WEIGHTS: usize = mem::offset_of!(ModelVertex, bone_weights);
 
-#[derive(Serialize, Deserialize)]
-#[serde(remote = "Vec2")]
-pub struct Vec2Def {
-    pub x: f32,
-    pub y: f32,
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(remote = "Vec3")]
-pub struct Vec3Def {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-}
-
-#[derive(Debug, Copy, Clone, Deserialize, Serialize)]
+#[derive(Debug, Copy, Clone)]
 #[repr(C, packed)]
 pub struct ModelVertex {
-    #[serde(with = "Vec3Def")]
     pub position: Vec3,
-    #[serde(with = "Vec3Def")]
     pub normal: Vec3,
-    #[serde(with = "Vec2Def")]
     pub uv: Vec2,
-    #[serde(with = "Vec3Def")]
     pub tangent: Vec3,
-    #[serde(with = "Vec3Def")]
     pub bi_tangent: Vec3,
     pub bone_ids: [i32; MAX_BONE_INFLUENCE],
     pub bone_weights: [f32; MAX_BONE_INFLUENCE],
@@ -191,7 +171,7 @@ impl ModelMesh {
             gl::EnableVertexAttribArray(2);
             gl::VertexAttribPointer(
                 2,
-                3,
+                2,
                 gl::FLOAT,
                 gl::FALSE,
                 mem::size_of::<ModelVertex>() as GLsizei,
@@ -222,11 +202,10 @@ impl ModelMesh {
 
             // bone ids
             gl::EnableVertexAttribArray(5);
-            gl::VertexAttribPointer(
+            gl::VertexAttribIPointer(
                 5,
                 4,
                 gl::INT,
-                gl::FALSE,
                 mem::size_of::<ModelVertex>() as GLsizei,
                 (OFFSET_OF_BONE_IDS) as *const GLvoid,
             );

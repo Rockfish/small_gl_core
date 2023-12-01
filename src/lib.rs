@@ -20,6 +20,7 @@ pub mod shader;
 pub mod sprite_model;
 pub mod texture;
 mod assimp_dump;
+mod assimp_utils;
 
 type ShaderId = u32;
 

@@ -1,27 +1,23 @@
-use crate::model_animation::convert_to_mat4;
 use crate::assimp_scene::*;
 use crate::bone_data::BoneData;
 use crate::error::Error;
-use crate::error::Error::{ModelError, SceneError};
+use crate::error::Error::SceneError;
 use crate::model_mesh::{ModelMesh, ModelVertex};
 use crate::shader::Shader;
 use crate::texture::{
     Texture, TextureConfig, TextureFilter, TextureSample, TextureType, TextureWrap,
 };
 use glam::*;
-use image::codecs::png::CompressionType::Default;
-use russimp::animation::Animation;
-use russimp::scene::*;
 use russimp::sys::*;
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::ffi::{c_char, CStr};
 use std::ops::Add;
 use std::os::raw::c_uint;
 use std::path::PathBuf;
 use std::ptr::*;
 use std::rc::Rc;
 use russimp::utils;
+use crate::assimp_utils::convert_to_mat4;
 
 // Animation
 // aiVector3D => Vec3
@@ -386,6 +382,7 @@ impl ModelBuilder {
             match bone_info_map.get(&bone.name) {
 
                 None => {
+                    // let other_offset = convert_matrix(&bone.offset_matrix);
                     let bone_info = BoneData {
                         name: bone.name.clone(),
                         bone_index: self.bone_count,
@@ -410,10 +407,12 @@ impl ModelBuilder {
                 assert!(vertex_id <= vertices.len());
 
                 vertices[vertex_id].set_bone_data(bone_id, weight);
-                if bone_id != last_bone_id {
-                    println!("vertex_id: {}  bone_id: {}  weight: {}", vertex_id, bone_id, weight);
-                    last_bone_id = bone_id;
-                }
+
+                // debug
+                // if bone_id != last_bone_id {
+                //     println!("vertex_id: {}  bone_id: {}  weight: {}", vertex_id, bone_id, weight);
+                //     last_bone_id = bone_id;
+                // }
             }
         }
     }

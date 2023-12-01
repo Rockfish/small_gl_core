@@ -109,6 +109,7 @@ fn main() {
     //     );
 
     let model_path = "examples/sample_animation/vampire/dancing_vampire.dae";
+    // let model_path = "/Users/john/Dev_Rust/Repos/OpenGL-Tutorials/LearnOpenGL/8.Guest Articles/2020/2.Skeletal Animation/resources/objects/vampire/dancing_vampire.dae";
     // let model_path = "/Users/john/Dev_Rust/Dev/russimp_rockfish/models/3DS/CameraRollAnim.3ds";
     // let model_path = "examples/sample_animation/animated_cube/AnimatedCube.gltf";   // small cube, doesn't animate
     // let cube = Cube::new("cube", shader.clone());
@@ -140,6 +141,7 @@ fn main() {
 
         // println!("time: {}   delta: {}", state.lastFrame, state.deltaTime);
         animator.update_animation(state.deltaTime);
+        // animator.update_animation(0.01);
 
         unsafe {
             // render
@@ -160,13 +162,9 @@ fn main() {
             shader.set_mat4("projection", &projection);
             shader.set_mat4("view", &view);
 
-
-            // let bone_mat = Mat4::from_axis_angle(vec3(0.0, 1.0, 0.0), (10.0 * state.lastFrame).to_radians());
-
             let final_bones = animator.final_bone_matrices.borrow_mut();
 
             for (i, bone_transform) in final_bones.iter().enumerate() {
-                // println!("bone: {}  transform: {:?}", i, &bone_transform);
                 shader.set_mat4(
                     format!("finalBonesMatrices[{}]", i).as_str(),
                     &bone_transform,
@@ -174,7 +172,7 @@ fn main() {
             }
 
             let mut model = Mat4::IDENTITY;
-            model *= Mat4::from_rotation_x(-00.0f32.to_radians());
+            // model *= Mat4::from_rotation_x(-90.0f32.to_radians());
             model *= Mat4::from_translation(vec3(0.0, -0.4, 0.0));
             model *= Mat4::from_scale(vec3(0.3, 0.3, 0.3));
             // let mut model = Mat4::from_translation(vec3(0.0, 5.0, 0.0));
@@ -182,10 +180,7 @@ fn main() {
 
             shader.set_mat4("model", &model);
 
-            // cube.render();
             dancing_model.render();
-
-            // sleep(Duration::from_secs(3));
         }
 
         window.swap_buffers();

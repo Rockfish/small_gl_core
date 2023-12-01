@@ -1,14 +1,14 @@
 use crate::assimp_scene::AssimpScene;
 use crate::bone_data::{BoneAnimation, BoneData};
 use crate::model::{BoneName, Model};
-use glam::{vec4, Mat4};
+use glam::Mat4;
 use russimp::animation::Animation;
 use russimp::node::Node;
 use russimp::scene::Scene;
-use russimp::Matrix4x4;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
+use crate::assimp_utils::convert_to_mat4;
 
 /// NodeData is local version of aiNode
 #[derive(Debug)]
@@ -50,8 +50,8 @@ impl ModelAnimation {
 
         let root_node = ModelAnimation::read_hierarchy_data(&root);
 
-        //println!("root_node: {:#?}", &root_node);
-        println!("bone_data_map: {:#?}", &model.bone_data_map.borrow());
+        // println!("root_node: {:#?}", &root_node);
+        // println!("bone_data_map: {:#?}", &model.bone_data_map.borrow());
 
         let mut model_animation = ModelAnimation {
             duration,
@@ -68,12 +68,14 @@ impl ModelAnimation {
 
     /// Converts scene.aiNode tree to local NodeData tree. Converting all the transforms to column major form.
     fn read_hierarchy_data(source: &Rc<Node>) -> NodeData {
+
         let mut node_data = NodeData {
             name: source.name.clone(),
             transformation: convert_to_mat4(&source.transformation),
             children: vec![]
         };
-        // println!("NodeData name: {}\n  source.transform: {:?}\n  dest.transform: {:?}\n", &dest.name, &source.transformation, &dest.transformation);
+
+        // println!("NodeData name: {}\n transform: {:?}\n", &node_data.name, &node_data.transformation);
 
         for child in source.children.borrow().iter() {
             let node = ModelAnimation::read_hierarchy_data(child);
@@ -83,40 +85,27 @@ impl ModelAnimation {
     }
 
     fn read_channel_bone_animations(&mut self, animation: &Animation, model: &mut Model) {
+        let mut bone_data_map = model.bone_data_map.borrow_mut();
 
         for channel in &animation.channels {
 
-            // // todo: revisit, added an insert that seems to be missing in the original code.
-            // if model.bone_data_map.borrow().get(&channel.name).is_none() {
-            //
-            //     println!("Bone_Data not found for channel name: {}", &channel.name);
-            //
-            //     // // todo: not sure since the new bone info doesn't have a real offset
-            //     // let bone_info = BoneData::new("none", model.bone_count, Mat4::IDENTITY);
-            //     //
-            //     // model
-            //     //     .bone_data_map
-            //     //     .borrow_mut()
-            //     //     .insert(channel.name.clone(), bone_info);
-            //     //
-            //     // model.bone_count += 1;
-            // }
+            if bone_data_map.get(&channel.name).is_none() {
 
-            if let Some(bone_data) = model.bone_data_map.borrow().get(&channel.name) {
-                let bone_index = bone_data.bone_index;
-                let bone = BoneAnimation::new(&channel.name.clone(), bone_index, &channel);
-                self.bone_animations.borrow_mut().push(bone);
+                println!("Bone_Data not found for channel name: {}", &channel.name);
+
+                let bone_info = BoneData::new(&channel.name.clone(), model.bone_count, Mat4::IDENTITY);
+
+                bone_data_map.insert(channel.name.clone(), bone_info);
+                model.bone_count += 1;
             }
+
+            let bone_data = &bone_data_map[&channel.name];
+
+            let bone_index = bone_data.bone_index;
+            let bone = BoneAnimation::new(&channel.name.clone(), bone_index, &channel);
+
+            self.bone_animations.borrow_mut().push(bone);
         }
     }
 }
 
-// Converts from row major matrix to column major matrix
-pub fn convert_to_mat4(m: &Matrix4x4) -> Mat4 {
-    Mat4::from_cols(
-        vec4(m.a1, m.b1, m.c1, m.d1),
-        vec4(m.a2, m.b2, m.c2, m.d2),
-        vec4(m.a3, m.b3, m.c3, m.d3),
-        vec4(m.a4, m.b4, m.c4, m.d4),
-    )
-}

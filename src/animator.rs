@@ -13,6 +13,7 @@ pub struct Animator {
 impl Animator {
     pub fn new(animation: &Rc<RefCell<ModelAnimation>>) -> Self {
         let mut final_bone_matrices = Vec::with_capacity(100);
+
         for _i in 0..100 {
             final_bone_matrices.push(Mat4::IDENTITY);
         }
@@ -35,7 +36,8 @@ impl Animator {
         let animation = &self.current_animation.clone();
         let root_node = &animation.borrow().root_node;
 
-        self.calculate_bone_transform(root_node, Mat4::IDENTITY);
+        // self.calculate_bone_transform(root_node, Mat4::IDENTITY);
+        self.calculate_bone_transform(root_node, self.current_animation.borrow().global_inverse_transform.clone());
 
         // println!("animation update completed.");
     }
