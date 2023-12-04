@@ -19,6 +19,17 @@ pub struct Shader {
     pub geom_file: Option<String>,
 }
 
+impl Default for Shader {
+    fn default() -> Self {
+        Shader {
+            id: 0,
+            vert_file: "".to_string(),
+            frag_file: "".to_string(),
+            geom_file: None,
+        }
+    }
+}
+
 impl Shader {
     pub fn new(vert_file: impl Into<String>, frag_file: impl Into<String>) -> Result<Self, String> {
         Shader::new_with_geom(vert_file, frag_file, None::<String>)

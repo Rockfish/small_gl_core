@@ -14,14 +14,15 @@ uniform mat4 model;
 
 const int MAX_BONES = 100;
 const int MAX_BONE_INFLUENCE = 4;
+
 uniform mat4 finalBonesMatrices[MAX_BONES];
+uniform mat4 nodeTransform;
 
 out vec2 TexCoords;
 
 void main()
 {
     vec4 totalPosition = vec4(0.0f);
-//    vec4 totalPosition = vec4(pos, 1.0f);
 
     for(int i = 0 ; i < MAX_BONE_INFLUENCE ; i++)
     {
@@ -39,6 +40,11 @@ void main()
 
         vec3 localNormal = mat3(finalBonesMatrices[boneIds[i]]) * norm;
    }
+
+    // For verts without bones
+    if (totalPosition == vec4(0.0f)) {
+        totalPosition = nodeTransform * vec4(pos, 1.0f);
+    }
 
     gl_Position =  projection * view * model * totalPosition;
 

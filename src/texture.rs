@@ -2,11 +2,9 @@ use crate::error::Error;
 use crate::gl;
 use crate::gl::{GLint, GLsizei, GLuint, GLvoid};
 use image::ColorType;
-use serde::{Deserialize, Serialize};
 use std::ffi::{c_uint, OsString};
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
-use std::rc::Rc;
 
 #[derive(Debug, Copy, Clone)]
 pub enum TextureFilter {
@@ -116,12 +114,6 @@ pub struct Texture {
     pub texture_type: TextureType,
     pub width: u32,
     pub height: u32,
-}
-
-#[derive(Debug, Clone)]
-pub struct TextureSample {
-    pub sample_name: String,
-    pub texture: Rc<Texture>,
 }
 
 impl Texture {

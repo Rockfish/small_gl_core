@@ -26,9 +26,17 @@ use std::cell::RefCell;
 use std::rc::Rc;
 use std::thread::sleep;
 use std::time::Duration;
+use small_gl_core::texture::TextureType;
 
 const SCR_WIDTH: f32 = 800.0;
 const SCR_HEIGHT: f32 = 800.0;
+
+// Lighting
+const lightFactor: f32 = 0.8;
+const nonBlue: f32 = 0.9;
+
+const floorLightFactor: f32 = 0.35;
+const floorNonBlue: f32 = 0.7;
 
 // Struct for passing state between the window loop and the event handler.
 struct State {
@@ -99,32 +107,74 @@ fn main() {
             .unwrap(),
         );
 
-    // let shader =
-    //     Rc::new(
-    //         Shader::new(
-    //             "examples/sample_animation/anim_model_colors.vert",
-    //             "examples/sample_animation/anim_model_colors.frag",
-    //         )
-    //         .unwrap(),
-    //     );
+    let shader =
+        Rc::new(
+            Shader::new(
+                "examples/sample_animation/player_shader.vert",
+                "examples/sample_animation/player_shader.frag",
+            )
+            .unwrap(),
+        );
 
     let model_path = "examples/sample_animation/vampire/dancing_vampire.dae";
+    // let model_path = "/Users/john/Dev_Assets/glTF-Sample-Models/2.0/CesiumMan/glTF/CesiumMan.gltf"; // works
     // let model_path = "/Users/john/Dev_Rust/Repos/OpenGL-Tutorials/LearnOpenGL/8.Guest Articles/2020/2.Skeletal Animation/resources/objects/vampire/dancing_vampire.dae";
-    // let model_path = "/Users/john/Dev_Rust/Dev/russimp_rockfish/models/3DS/CameraRollAnim.3ds";
-    // let model_path = "examples/sample_animation/animated_cube/AnimatedCube.gltf";   // small cube, doesn't animate
+    let model_path = "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Player.fbx";
+    // let model_path = "/Users/john/Dev_Assets/animated-characters-3/Model/characterMedium.fbx";
+    // let model_path = "/Users/john/Dev_Rust/Dev/alien_explorer/assets/models/alien.glb";
     // let cube = Cube::new("cube", shader.clone());
-    // let model_path = "examples/sample_animation/source/cube_capoeira_martelo_cruzando.FBX.fbx"; // table? with cube, doesn't animate
+    // let model_path = "examples/sample_animation/source/cube_capoeira_martelo_cruzando.FBX.fbx"; // platform with martial arts guy
     // let model_path = "/Users/john/Dev_Rust/Repos/ogldev/Content/box.obj"; // no animations
     // let model_path = "/Users/john/Dev_Rust/Repos/OpenGL-Animation/Resources/res/model.dae"; // doesn't load
     // let model_path = "examples/sample_animation/colorful_cube/scene.gltf";  // small cube, doesn't animate
+    // let model_path = "/Users/john/Dev_Rust/Dev/learn_opengl_with_rust/resources/objects/cyborg/cyborg.obj"; // not animated
+
     let scene = AssimpScene::load_assimp_scene(model_path).unwrap();
-    // let model_path = "/Users/john/Dev_Rust/Dev/learn_opengl_with_rust/resources/objects/cyborg/cyborg.obj";
-    let mut dancing_model = ModelBuilder::new("model", shader.clone(), model_path)
+
+    let dancing_model = ModelBuilder::new("model", shader.clone(), model_path)
+        .add_texture("Player", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Player_D.tga") // Player model
+        .add_texture("Player", TextureType::Specular, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Player_M.tga") // Player model
+        .add_texture("Player", TextureType::Emissive, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Player_E.tga") // Player model
+        .add_texture("Player", TextureType::Normal, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Player_NRM.tga") // Player model
+        .add_texture("Gun", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Gun_D.tga") // Player model
+        .add_texture("Gun", TextureType::Specular, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Gun_M.tga") // Player model
+        .add_texture("Gun", TextureType::Emissive, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Gun_E.tga") // Player model
+        .add_texture("Gun", TextureType::Normal, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Gun_NRM.tga") // Player model
+        // .add_texture("characterMedium", TextureType::Diffuse, "/Users/john/Dev_Assets/animated-characters-3/Skins/humanFemaleA.png")  // characterMedium model
+        // .add_texture("Box016", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/small_gl_core/examples/sample_animation/container2.png") // capoeira
+        // .add_texture("Box009", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/small_gl_core/examples/sample_animation/container2.png") // capoeira
+        // .add_texture("Box008", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/small_gl_core/examples/sample_animation/container2.png") // capoeira
+        // .add_texture("Box007", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/small_gl_core/examples/sample_animation/container2.png") // capoeira
+        // .add_texture("Box010", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/small_gl_core/examples/sample_animation/container2.png") // capoeira
+        // .add_texture("Box011", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/small_gl_core/examples/sample_animation/container2.png") // capoeira
+        // .add_texture("Box012", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/small_gl_core/examples/sample_animation/container2.png") // capoeira
+        // .add_texture("Box001", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/small_gl_core/examples/sample_animation/container2.png") // capoeira
+        // .add_texture("Box006", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/small_gl_core/examples/sample_animation/container2.png") // capoeira
+        // .add_texture("Box005", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/small_gl_core/examples/sample_animation/container2.png") // capoeira
+        // .add_texture("Box004", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/small_gl_core/examples/sample_animation/container2.png") // capoeira
+        // .add_texture("Box015", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/small_gl_core/examples/sample_animation/container2.png") // capoeira
+        // .add_texture("Box014", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/small_gl_core/examples/sample_animation/container2.png") // capoeira
+        // .add_texture("Box013", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/small_gl_core/examples/sample_animation/container2.png") // capoeira
+        // .add_texture("Box002", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/small_gl_core/examples/sample_animation/container2.png") // capoeira
+        // .add_texture("Box003", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/small_gl_core/examples/sample_animation/container2.png") // capoeira
+        // .add_texture("Cylinder001", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/small_gl_core/examples/sample_animation/animated_cube/AnimatedCube_BaseColor.png") // capoeira
         .build_with_scene(&scene)
         .unwrap();
 
-    let dance_animation = Rc::new(RefCell::new(ModelAnimation::new(&scene, &mut dancing_model)));
+    let dancing_model = Rc::new(RefCell::new(dancing_model));
+
+    let dance_animation = Rc::new(RefCell::new(ModelAnimation::new(&scene, dancing_model.clone())));
     let mut animator = Animator::new(&dance_animation);
+
+    // Lighting
+    let lightDir: Vec3 = vec3(-0.8, 0.0, -1.0).normalize_or_zero();
+    let playerLightDir: Vec3 = vec3(-1.0, -1.0, -1.0).normalize_or_zero();
+    let lightColor: Vec3 = lightFactor * 1.0 * vec3(nonBlue * 0.406, nonBlue * 0.723, 1.0);
+    // const lightColor: Vec3 = lightFactor * 1.0 * vec3(0.406, 0.723, 1.0);
+    let floorLightColor: Vec3 = floorLightFactor * 1.0 * vec3(floorNonBlue * 0.406, floorNonBlue * 0.723, 1.0);
+    let floorAmbientColor: Vec3 = floorLightFactor * 0.50 * vec3(floorNonBlue * 0.7, floorNonBlue * 0.7, 0.7);
+
+    let ambientColor: Vec3 = lightFactor * 1.0 * vec3(nonBlue * 0.7, nonBlue * 0.7, 0.7);
 
     state.lastFrame = glfw.get_time() as f32;
 
@@ -140,8 +190,8 @@ fn main() {
         }
 
         // println!("time: {}   delta: {}", state.lastFrame, state.deltaTime);
-        animator.update_animation(state.deltaTime);
-        // animator.update_animation(0.01);
+        // animator.update_animation(state.deltaTime);
+        animator.update_animation(0.01);
 
         unsafe {
             // render
@@ -156,8 +206,9 @@ fn main() {
                 state.camera.zoom.to_radians(),
                 SCR_WIDTH / SCR_HEIGHT,
                 0.1,
-                500.0,
+                1000.0,
             );
+
             let view = state.camera.get_view_matrix();
             shader.set_mat4("projection", &projection);
             shader.set_mat4("view", &view);
@@ -173,14 +224,21 @@ fn main() {
 
             let mut model = Mat4::IDENTITY;
             // model *= Mat4::from_rotation_x(-90.0f32.to_radians());
-            model *= Mat4::from_translation(vec3(0.0, -0.4, 0.0));
-            model *= Mat4::from_scale(vec3(0.3, 0.3, 0.3));
+            model *= Mat4::from_translation(vec3(0.0, -10.4, -400.0));
+            // model *= Mat4::from_scale(vec3(0.3, 0.3, 0.3));
             // let mut model = Mat4::from_translation(vec3(0.0, 5.0, 0.0));
             // model = model * Mat4::from_scale(vec3(15.0, 15.0, 15.0));
+            model = model * Mat4::from_scale(vec3(1.0, 1.0, 1.0));
 
             shader.set_mat4("model", &model);
 
-            dancing_model.render();
+            shader.set_bool("useLight", true);
+            shader.set_vec3("ambient", &ambientColor);
+
+            shader.set_mat4("aimRot", &Mat4::IDENTITY);
+            shader.set_mat4("lightSpaceMatrix", &Mat4::IDENTITY);
+
+            dancing_model.borrow().render();
         }
 
         window.swap_buffers();

@@ -1,11 +1,11 @@
 use crate::assimp_scene::*;
-use crate::bone_data::BoneData;
+use crate::node_animation::BoneData;
 use crate::error::Error;
-use crate::error::Error::SceneError;
+use crate::error::Error::{MeshError, SceneError};
 use crate::model_mesh::{ModelMesh, ModelVertex};
 use crate::shader::Shader;
 use crate::texture::{
-    Texture, TextureConfig, TextureFilter, TextureSample, TextureType, TextureWrap,
+    Texture, TextureConfig, TextureFilter, TextureType, TextureWrap,
 };
 use glam::*;
 use russimp::sys::*;
@@ -19,107 +19,41 @@ use std::rc::Rc;
 use russimp::utils;
 use crate::assimp_utils::convert_to_mat4;
 
-// Animation
-// aiVector3D => Vec3
-
-// #[repr(u32)]
-// #[derive(Debug, Clone, PartialEq)]
-// pub enum AnimationBehaviour {
-//     DEFAULT= 0,
-//     CONSTANT= 1,
-//     LINEAR= 2,
-//     REPEAT= 3,
-//     Force32Bit= 2147483647,
-// }
-
-// #[derive(Debug, Clone, PartialEq)]
-// pub struct VectorKey {
-//     pub time: f64,
-//     pub value: Vec3
-// }
-//
-// #[derive(Debug, Clone, PartialEq)]
-// pub struct QuatKey {
-//     pub time: f64,
-//     pub value: Quat,
-// }
-//
-// #[derive(Debug, Clone, PartialEq)]
-// pub struct MeshKey {
-//     pub time: f64,
-//     pub value: u32,
-// }
-//
-// #[derive(Debug, Clone, PartialEq)]
-// pub struct MeshMorphKey {
-//     pub time: f64,
-//     pub values: Vec<u32>,
-//     pub weights: Vec<f64>,
-//     pub num_values_and_weights: u32,
-// }
-//
-// #[derive(Debug, Clone, PartialEq)]
-// pub struct NodeAnim {
-//     pub node_name: String,  // Rc<str> ?
-//     pub num_position_keys: u32,
-//     pub position_keys: Vec<VectorKey>,
-//     pub num_rotation_keys: u32,
-//     pub rotation_keys: Vec<QuatKey>,
-//     pub num_scaling_keys: u32,
-//     pub scaling_keys: Vec<VectorKey>,
-//     pub pre_state: AnimationBehaviour,
-//     pub m_post_state: AnimationBehaviour,
-// }
-//
-// #[derive(Debug, Clone, PartialEq)]
-// pub struct MeshAnim {
-//     pub name: String,
-//     pub num_keys: u32,
-//     pub keys: Vec<MeshKey>,
-// }
-//
-// #[derive(Debug, Clone, PartialEq)]
-// pub struct MeshMorphAnim {
-//     pub name: String,
-//     pub num_keys: u32,
-//     pub keys: Vec<MeshMorphKey>,
-// }
-//
-// #[derive(Debug, Clone, PartialEq)]
-// pub struct Animation {
-//     pub name: String,
-//     pub duration: f64,
-//     pub ticks_per_second: f64,
-//     pub num_channels: u32,
-//     pub channels: Vec<NodeAnim>,
-//     pub num_mesh_channels: u32,
-//     pub mesh_channels: Vec<MeshAnim>,
-//     pub num_morph_mesh_channels: u32,
-//     pub morph_mesh_channels: Vec<MeshMorphAnim>,
-// }
-
 pub type BoneName = String;
 
 // model data
 #[derive(Debug, Clone)]
 pub struct Model {
     pub name: Rc<str>,
-    pub shader: Rc<Shader>, // todo: remove shader from model since which shader depends the render context
-    pub meshes: Rc<Vec<ModelMesh>>,
+    pub shader: Rc<Shader>,
+    // todo: remove shader from model since which shader depends the render context
+    pub meshes: Rc<RefCell<Vec<ModelMesh>>>,
     pub bone_data_map: Rc<RefCell<HashMap<BoneName, BoneData>>>,
     pub bone_count: i32,
     // pub animations: Rc<Vec<Animation>>,
 }
 
+impl Default for Model {
+    fn default() -> Self {
+        Model {
+            name: Rc::from(""),
+            shader: Rc::new(Default::default()),
+            meshes: Rc::new(RefCell::new(vec![])),
+            bone_data_map: Rc::new(RefCell::new(Default::default())),
+            bone_count: 0,
+        }
+    }
+}
+
 impl Model {
     pub fn render(&self) {
-        for mesh in self.meshes.iter() {
+        for mesh in self.meshes.borrow_mut().iter() {
             mesh.render(&self.shader);
         }
     }
 
     pub fn render_with_shader(&self, shader: &Rc<Shader>) {
-        for mesh in self.meshes.iter() {
+        for mesh in self.meshes.borrow_mut().iter() {
             mesh.render(shader);
         }
     }
@@ -130,10 +64,24 @@ impl Model {
         model_transform *= Mat4::from_scale(scale);
         self.shader.set_mat4("model", &model_transform);
 
-        for mesh in self.meshes.iter() {
+        for mesh in self.meshes.borrow_mut().iter() {
             mesh.render(&self.shader);
         }
     }
+}
+
+#[derive(Debug)]
+struct AddedTextures {
+    mesh_name: String,
+    texture_type: TextureType,
+    texture_filename: String,
+}
+
+#[derive(Debug)]
+struct AddedBone {
+    mesh_name: String,
+    bone_name: String,
+    bone_weight: f32,
 }
 
 #[derive(Debug)]
@@ -148,11 +96,9 @@ pub struct ModelBuilder {
     pub directory: PathBuf,
     pub gamma_correction: bool,
     pub flip_v: bool,
-    pub textures_cache: Vec<Rc<Texture>>,
-    pub diffuse_count: u32,
-    pub specular_count: u32,
-    pub normal_count: u32,
-    pub height_count: u32,
+    pub textures_cache: RefCell<Vec<Rc<Texture>>>,
+    pub added_textures: Vec<AddedTextures>,
+    pub added_bones: Vec<AddedBone>,
 }
 
 impl ModelBuilder {
@@ -162,7 +108,7 @@ impl ModelBuilder {
         ModelBuilder {
             name: name.into(),
             shader,
-            textures_cache: vec![],
+            textures_cache: RefCell::new(vec![]),
             meshes: vec![],
             bone_data_map: Rc::new(RefCell::new(HashMap::new())),
             bone_count: 0,
@@ -171,10 +117,8 @@ impl ModelBuilder {
             directory,
             gamma_correction: false,
             flip_v: false,
-            diffuse_count: 0,
-            specular_count: 0,
-            normal_count: 0,
-            height_count: 0,
+            added_textures: vec![],
+            added_bones: vec![],
         }
     }
 
@@ -188,13 +132,37 @@ impl ModelBuilder {
         self
     }
 
+    pub fn add_texture(mut self, mesh_name: impl Into<String>, texture_type: TextureType, texture_filename: impl Into<String>) -> Self {
+        let added_texture = AddedTextures {
+            mesh_name: mesh_name.into(),
+            texture_type,
+            texture_filename: texture_filename.into(),
+        };
+        self.added_textures.push(added_texture);
+        self
+    }
+
+    pub fn add_bone(mut self, mesh_name: impl Into<String>, bone_name: impl Into<String>, bone_weight: f32) -> Self {
+        let added_bone = AddedBone {
+            mesh_name: mesh_name.into(),
+            bone_name: bone_name.into(),
+            bone_weight,
+        };
+        self.added_bones.push(added_bone);
+        self
+    }
+
     pub fn build(mut self) -> Result<Model, Error> {
         let assimp_scene = AssimpScene::load_assimp_scene(self.filepath.clone())?;
+
         self.load_model(&assimp_scene)?;
+
+        self.add_textures()?;
+
         let model = Model {
             name: Rc::from(self.name),
             shader: self.shader,
-            meshes: Rc::from(self.meshes),
+            meshes: Rc::from(RefCell::new(self.meshes)),
             bone_data_map: self.bone_data_map,
             bone_count: self.bone_count,
             // animations: Rc::from(self.animations),
@@ -206,12 +174,12 @@ impl ModelBuilder {
     pub fn build_with_scene(mut self, assimp_scene: &AssimpScene) -> Result<Model, Error> {
         self.load_model(assimp_scene)?;
 
-        // println!("meshes: \n {:?}", &self.meshes);
+        self.add_textures()?;
 
         let model = Model {
             name: Rc::from(self.name),
             shader: self.shader,
-            meshes: Rc::from(self.meshes),
+            meshes: Rc::from(RefCell::new(self.meshes)),
             bone_data_map: self.bone_data_map,
             bone_count: self.bone_count,
             // animations: Rc::from(self.animations),
@@ -239,11 +207,10 @@ impl ModelBuilder {
         let slice = slice_from_raw_parts(scene.mMeshes, scene.mNumMeshes as usize);
         let assimp_meshes = unsafe { slice.as_ref() }.unwrap();
 
-        let node = unsafe{ node.as_ref() }.unwrap();
+        let node = unsafe { node.as_ref() }.unwrap();
         let node_meshes: Vec<u32> = utils::get_raw_vec(node.mMeshes, node.mNumMeshes);
 
         for i in 0..node_meshes.len() {
-
             let mesh = assimp_meshes[node_meshes[i] as usize];
 
             let mesh = self.process_mesh(mesh, scene);
@@ -272,7 +239,7 @@ impl ModelBuilder {
 
         let mut vertices: Vec<ModelVertex> = vec![];
         let mut indices: Vec<u32> = vec![];
-        let mut textures: Vec<TextureSample> = vec![];
+        let mut textures: Vec<Rc<Texture>> = vec![];
 
         let vertex_vec = get_vec_from_parts(ai_mesh.mVertices, ai_mesh.mNumVertices);
         let normal_vec = get_vec_from_parts(ai_mesh.mNormals, ai_mesh.mNumVertices);
@@ -325,7 +292,8 @@ impl ModelBuilder {
         let assimp_materials = unsafe {
             slice_from_raw_parts(ai_scene.mMaterials, ai_scene.mNumMaterials as usize).as_ref()
         }
-        .unwrap();
+            .unwrap();
+
         let material_index = ai_mesh.mMaterialIndex as usize;
         let assimp_material = assimp_materials[material_index];
 
@@ -337,13 +305,11 @@ impl ModelBuilder {
         // normal: texture_normalN
 
         // 1. diffuse maps
-        let diffuse_textures =
-            self.load_material_textures(assimp_material, TextureType::Diffuse)?;
+        let diffuse_textures = self.load_material_textures(assimp_material, TextureType::Diffuse)?;
         textures.extend(diffuse_textures);
 
         // 2. specular maps
-        let specular_textures =
-            self.load_material_textures(assimp_material, TextureType::Specular)?;
+        let specular_textures = self.load_material_textures(assimp_material, TextureType::Specular)?;
         textures.extend(specular_textures);
 
         // 3. normal maps
@@ -354,13 +320,15 @@ impl ModelBuilder {
         let height_maps = self.load_material_textures(assimp_material, TextureType::Height)?;
         textures.extend(height_maps);
 
-        let name: String = ai_mesh.mName.into();
+        let mesh_name: String = ai_mesh.mName.into();
 
-        println!("mesh name: {}", &name);
+        println!("mesh name: {}", &mesh_name);
 
         self.extract_bone_weights_for_vertices(&mut vertices, &ai_mesh);
 
-        let mesh = ModelMesh::new(name, vertices, indices, textures);
+        self.add_bones(&mesh_name, &mut vertices)?;
+
+        let mesh = ModelMesh::new(mesh_name, vertices, indices, textures);
         Ok(mesh)
     }
 
@@ -373,14 +341,12 @@ impl ModelBuilder {
         let bones: Vec<russimp::bone::Bone> =
             russimp::utils::get_vec_from_raw(ai_mesh.mBones, ai_mesh.mNumBones);
 
-        let mut bone_info_map = self.bone_data_map.borrow_mut();
+        let mut bone_data_map = self.bone_data_map.borrow_mut();
 
         for bone in bones {
-
             let mut bone_id = -1;
 
-            match bone_info_map.get(&bone.name) {
-
+            match bone_data_map.get(&bone.name) {
                 None => {
                     // let other_offset = convert_matrix(&bone.offset_matrix);
                     let bone_info = BoneData {
@@ -388,7 +354,7 @@ impl ModelBuilder {
                         bone_index: self.bone_count,
                         offset: convert_to_mat4(&bone.offset_matrix),
                     };
-                    bone_info_map.insert(bone.name.clone(), bone_info);
+                    bone_data_map.insert(bone.name.clone(), bone_info);
                     bone_id = self.bone_count;
                     self.bone_count += 1;
                 }
@@ -398,9 +364,8 @@ impl ModelBuilder {
                 }
             }
 
-            let mut last_bone_id = -1;
+            // let mut last_bone_id = -1;
             for bone_weight in bone.weights {
-
                 let vertex_id = bone_weight.vertex_id as usize;
                 let weight = bone_weight.weight;
 
@@ -421,74 +386,86 @@ impl ModelBuilder {
         &mut self,
         assimp_material: *mut aiMaterial,
         texture_type: TextureType,
-    ) -> Result<Vec<TextureSample>, Error> {
-        let mut textures: Vec<TextureSample> = vec![];
+    ) -> Result<Vec<Rc<Texture>>, Error> {
+        let mut textures: Vec<Rc<Texture>> = vec![];
 
-        let texture_count =
-            unsafe { aiGetMaterialTextureCount(assimp_material, texture_type.into()) };
-
-        // println!("loading texture_count: {}", texture_count);
+        let texture_count = unsafe { aiGetMaterialTextureCount(assimp_material, texture_type.into()) };
 
         for i in 0..texture_count {
             let texture_filename =
                 unsafe { get_material_texture_filename(assimp_material, texture_type, i)? };
-            let full_path = self.directory.join(&texture_filename);
 
-            // println!("model texture full_path: {:?}", full_path);
-
-            let cached_texture = self
-                .textures_cache
-                .iter()
-                .find(|t| t.texture_path == full_path.clone().into_os_string());
-
-            if cached_texture.is_some() {
-                continue;
-            }
-
-            let sample_name = self.get_next_texture_name(texture_type);
-            let texture = Rc::new(Texture::new(
-                full_path,
-                &TextureConfig {
-                    flip_v: self.flip_v,
-                    gamma_correction: self.gamma_correction,
-                    filter: TextureFilter::Linear,
-                    wrap: TextureWrap::Clamp,
-                    texture_type,
-                },
-            )?);
-            self.textures_cache.push(texture.clone());
-            let texture_sample = TextureSample {
-                sample_name,
-                texture,
-            };
-            textures.push(texture_sample);
+            let texture = self.load_texture(texture_type, texture_filename.as_str())?;
+            textures.push(texture);
         }
         Ok(textures)
     }
 
-    // todo: revisit setting name here. shader has dependency on name and the order of the textures. hmm.
-    fn get_next_texture_name(&mut self, texture_type: TextureType) -> String {
-        let num = match texture_type {
-            TextureType::Diffuse => {
-                self.diffuse_count += 1;
-                self.diffuse_count
+    fn add_textures(&mut self) -> Result<(), Error> {
+        for added_texture in &self.added_textures {
+            let texture = self.load_texture(added_texture.texture_type, added_texture.texture_filename.as_str())?;
+            let mut mesh = self.meshes.iter_mut().find(|mesh| mesh.name == added_texture.mesh_name);
+            if let Some(mut model_mesh) = mesh {
+                let path = self.directory.join(&added_texture.texture_filename).into_os_string();
+                if model_mesh.textures.iter().find(|t| t.texture_path == path).is_none() {
+                    model_mesh.textures.push(texture);
+                }
+            } else {
+                return Err(MeshError(format!("add_texture mesh: {} not found", &added_texture.mesh_name)));
             }
-            TextureType::Specular => {
-                self.specular_count += 1;
-                self.specular_count
-            }
-            TextureType::Normal => {
-                self.normal_count += 1;
-                self.normal_count
-            }
-            TextureType::Height => {
-                self.height_count += 1;
-                self.height_count
-            }
-            _ => todo!(),
-        };
+        }
+        Ok(())
+    }
 
-        texture_type.to_string().add(&num.to_string())
+    fn add_bones(&mut self, mesh_name: &String, vertices: &mut Vec<ModelVertex>) -> Result<(), Error> {
+        for added_bone in &self.added_bones {
+            if added_bone.mesh_name == *mesh_name {
+                let bone_map =  self.bone_data_map.borrow();
+                let option_bone_data = bone_map.get(&added_bone.bone_name);
+                if let Some(bone_data) = option_bone_data {
+                    for vertex in vertices.iter_mut() {
+                        vertex.set_bone_data(bone_data.bone_index, added_bone.bone_weight);
+                    }
+                } else {
+                    return Err(MeshError(format!("add_bones bone: {} not found", &added_bone.bone_name)));
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// load or retrieve copy of texture
+    fn load_texture(&self, texture_type: TextureType, texture_filename: &str) -> Result<Rc<Texture>, Error> {
+        let full_path = self.directory.join(&texture_filename);
+
+        let mut texture_cache = self
+            .textures_cache
+            .borrow_mut();
+
+        let cached_texture = texture_cache
+            .iter()
+            .find(|t| t.texture_path == full_path.clone().into_os_string());
+
+        match cached_texture {
+            None => {
+                let texture = Rc::new(Texture::new(
+                    full_path,
+                    &TextureConfig {
+                        flip_v: self.flip_v,
+                        gamma_correction: self.gamma_correction,
+                        filter: TextureFilter::Linear,
+                        wrap: TextureWrap::Clamp,
+                        texture_type,
+                    },
+                )?);
+
+                texture_cache.push(texture.clone());
+                Ok(texture)
+            }
+            Some(texture) => {
+                Ok(texture.clone())
+            }
+        }
     }
 }
 

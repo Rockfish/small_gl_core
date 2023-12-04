@@ -21,20 +21,20 @@ pub struct KeyScale {
 }
 
 #[derive(Debug, Clone)]
-pub struct BoneAnimation {
-    pub bone_index: i32,
+pub struct NodeAnimation {
     pub name: String,
     pub positions: Vec<KeyPosition>,
     pub rotations: Vec<KeyRotation>,
     pub scales: Vec<KeyScale>,
-    pub local_transform: Mat4,
+    // pub post_state: u32,
+    // pub pre_state: u32,
 }
 
 #[derive(Debug, Clone)]
 pub struct BoneData {
     pub name: String,
     pub bone_index: i32,  // index connecting mesh bone_id array to transform in shader final_transform array
-    pub offset: Mat4, // offset from bone's parent
+    pub offset: Mat4,     // offset from bone's parent
 }
 
 impl BoneData {
@@ -47,8 +47,8 @@ impl BoneData {
     }
 }
 
-impl BoneAnimation {
-    pub fn new(name: impl Into<String>, id: i32, channel: &NodeAnim) -> Self {
+impl NodeAnimation {
+    pub fn new(name: impl Into<String>, channel: &NodeAnim) -> Self {
 
         let positions: Vec<KeyPosition> =
             channel.position_keys.iter().map(|key| key.into()).collect();
@@ -58,21 +58,22 @@ impl BoneAnimation {
 
         let scales: Vec<KeyScale> = channel.scaling_keys.iter().map(|key| key.into()).collect();
 
-        BoneAnimation {
-            bone_index: id,
-            name: name.into(),
+        let name = name.into();
+        println!("NodeAnimation: {}", &name);
+
+        NodeAnimation {
+            name,
             positions,
             rotations,
             scales,
-            local_transform: Default::default(),
         }
     }
 
-    pub fn update(&mut self, animation_time: f32) {
+    pub fn get_animation_transform(&self, animation_time: f32) -> Mat4 {
         let translation = self.interpolate_position(animation_time);
         let rotation = self.interpolate_rotation(animation_time);
         let scale = self.interpolate_scaling(animation_time);
-        self.local_transform = translation * rotation * scale;
+        translation * rotation * scale
     }
 
     fn interpolate_position(&self, animation_time: f32) -> Mat4 {
@@ -114,7 +115,6 @@ impl BoneAnimation {
         let final_rotation = self.rotations[p0_index]
             .orientation
             .slerp(self.rotations[p1_index].orientation, scale_factor);
-            // .normalize();
 
         Mat4::from_quat(final_rotation)
     }
@@ -140,29 +140,31 @@ impl BoneAnimation {
         Mat4::from_scale(final_scale)
     }
 
-    // todo: double check that its returning the right index
     fn get_position_index(&self, animation_time: f32) -> usize {
-        self.positions
-            .iter()
-            .position(|key| key.time_stamp > animation_time)
-            .unwrap()
-            - 1
+        for index in 0..self.positions.len() -1 {
+           if animation_time < self.positions[index + 1].time_stamp {
+               return index
+           }
+        }
+        panic!("animation time out of bounds");
     }
 
     fn get_rotation_index(&self, animation_time: f32) -> usize {
-        self.rotations
-            .iter()
-            .position(|key| key.time_stamp > animation_time)
-            .unwrap()
-            - 1
+        for index in 0..self.rotations.len() -1 {
+            if animation_time < self.rotations[index + 1].time_stamp {
+                return index
+            }
+        }
+        panic!("animation time out of bounds");
     }
 
     fn get_scale_index(&self, animation_time: f32) -> usize {
-        self.scales
-            .iter()
-            .position(|key| key.time_stamp > animation_time)
-            .unwrap()
-            - 1
+        for index in 0..self.scales.len() -1 {
+            if animation_time < self.scales[index + 1].time_stamp {
+                return index
+            }
+        }
+        panic!("animation time out of bounds");
     }
 
     fn get_scale_factor(

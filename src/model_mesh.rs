@@ -1,11 +1,11 @@
 use crate::gl;
 use crate::gl::{GLsizei, GLsizeiptr, GLvoid};
 use crate::shader::Shader;
-use crate::texture::{Texture, TextureSample};
+use crate::texture::{Texture, TextureType};
 use glam::u32;
 use glam::*;
-use serde::{Deserialize, Serialize};
 use std::mem;
+use std::ops::Add;
 use std::rc::Rc;
 
 const MAX_BONE_INFLUENCE: usize = 4;
@@ -71,7 +71,8 @@ pub struct ModelMesh {
     pub name: String,
     pub vertices: Vec<ModelVertex>,
     pub indices: Vec<u32>,
-    pub textures: Vec<TextureSample>,
+    pub textures: Vec<Rc<Texture>>,
+    pub node_transform: Mat4,
     pub vao: u32,
     pub vbo: u32,
     pub ebo: u32,
@@ -82,13 +83,14 @@ impl ModelMesh {
         name: impl Into<String>,
         vertices: Vec<ModelVertex>,
         indices: Vec<u32>,
-        textures: Vec<TextureSample>,
+        textures: Vec<Rc<Texture>>,
     ) -> ModelMesh {
         let mut mesh = ModelMesh {
             name: name.into(),
             vertices,
             indices,
             textures,
+            node_transform: Mat4::IDENTITY,
             vao: 0,
             vbo: 0,
             ebo: 0,
@@ -97,17 +99,74 @@ impl ModelMesh {
         mesh
     }
 
+    // pub fn render(&self, shader: &Rc<Shader>) {
+    //     unsafe {
+    //         // set the location and binding for all the textures
+    //         for (texture_count, texture_sample) in self.textures.iter().enumerate() {
+    //             // active proper texture unit before binding
+    //             gl::ActiveTexture(gl::TEXTURE0 + texture_count as u32);
+    //             // bind the texture to the texture unit
+    //             gl::BindTexture(gl::TEXTURE_2D, texture_sample.texture.id);
+    //
+    //             shader.set_int(&texture_sample.sample_name, texture_count as i32);
+    //         }
+    //
+    //         gl::BindVertexArray(self.vao);
+    //         gl::DrawElements(
+    //             gl::TRIANGLES,
+    //             self.indices.len() as i32,
+    //             gl::UNSIGNED_INT,
+    //             std::ptr::null::<GLvoid>(),
+    //         );
+    //         gl::BindVertexArray(0);
+    //     }
+    // }
     pub fn render(&self, shader: &Rc<Shader>) {
-        unsafe {
-            // set the location and binding for all the textures
-            for (texture_count, texture_sample) in self.textures.iter().enumerate() {
-                // active proper texture unit before binding
-                gl::ActiveTexture(gl::TEXTURE0 + texture_count as u32);
-                // bind the texture to the texture unit
-                gl::BindTexture(gl::TEXTURE_2D, texture_sample.texture.id);
+        let mut diffuse_count: u32 = 0;
+        let mut specular_count: u32 = 0;
+        let mut normal_count: u32 = 0;
+        let mut height_count: u32 = 0;
+        let mut emissive_count: u32 = 0;
 
-                shader.set_int(&texture_sample.sample_name, texture_count as i32);
+        unsafe {
+            for (texture_unit, texture) in self.textures.iter().enumerate() {
+
+                let num = match texture.texture_type {
+                    TextureType::Diffuse => {
+                        diffuse_count += 1;
+                        diffuse_count
+                    }
+                    TextureType::Specular => {
+                        specular_count += 1;
+                        specular_count
+                    }
+                    TextureType::Normal => {
+                        normal_count += 1;
+                        normal_count
+                    }
+                    TextureType::Height => {
+                        height_count += 1;
+                        height_count
+                    }
+                    TextureType::Emissive => {
+                        emissive_count += 1;
+                        emissive_count
+                    }
+                    _ => todo!(),
+                };
+
+                let texture_name = texture
+                    .texture_type
+                    .to_string()
+                    .add(&num.to_string());
+
+                shader.set_int(&texture_name, texture_unit as i32);
+
+                gl::ActiveTexture(gl::TEXTURE0 + texture_unit as u32);
+                gl::BindTexture(gl::TEXTURE_2D, texture.id);
             }
+
+            shader.set_mat4("nodeTransform", &self.node_transform);
 
             gl::BindVertexArray(self.vao);
             gl::DrawElements(

@@ -3,7 +3,7 @@ use small_gl_core::model::Model;
 use small_gl_core::model_mesh::{ModelMesh, ModelVertex};
 use small_gl_core::shader::Shader;
 use small_gl_core::texture::{
-    Texture, TextureConfig, TextureFilter, TextureSample, TextureType, TextureWrap,
+    Texture, TextureConfig, TextureFilter, TextureType, TextureWrap,
 };
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -20,7 +20,7 @@ impl Cube {
         let model = Model {
             name: Rc::from(name),
             shader,
-            meshes: Rc::new(vec![mesh]),
+            meshes: Rc::new(RefCell::new(vec![mesh])),
             bone_data_map: Rc::new(RefCell::new(Default::default())),
             bone_count: 0,
         };
@@ -31,7 +31,7 @@ impl Cube {
     fn get_meshes() -> ModelMesh {
         let (vertices, indices) = Cube::data();
         let texture =
-            Texture::new(
+            Rc::new(Texture::new(
                 "examples/sample_animation/container2.png",
                 &TextureConfig {
                     flip_v: false,
@@ -41,15 +41,9 @@ impl Cube {
                     texture_type: TextureType::Diffuse,
                 },
             )
-            .unwrap();
+            .unwrap());
 
-        let texture_sample =
-            TextureSample {
-                sample_name: "texture_diffuse1".to_string(),
-                texture: Rc::new(texture),
-            };
-
-        ModelMesh::new("cube", vertices, indices, vec![texture_sample])
+        ModelMesh::new("cube", vertices, indices, vec![texture])
     }
 
     fn data() -> (Vec<ModelVertex>, Vec<u32>) {

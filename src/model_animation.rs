@@ -1,5 +1,5 @@
 use crate::assimp_scene::AssimpScene;
-use crate::bone_data::{BoneAnimation, BoneData};
+use crate::node_animation::{NodeAnimation, BoneData};
 use crate::model::{BoneName, Model};
 use glam::Mat4;
 use russimp::animation::Animation;
@@ -16,31 +16,63 @@ pub struct NodeData {
     pub name: String,
     pub transformation: Mat4,
     pub children: Vec<NodeData>,
+    pub meshes: Vec<u32>,
 }
 
 impl NodeData {
     pub fn new() -> Self {
         NodeData {
             name: String::new(),
-            transformation: Default::default(),
+            transformation: Mat4::IDENTITY,
             children: vec![],
+            meshes: vec![],
+        }
+    }
+}
+
+impl Default for NodeData {
+    fn default() -> Self {
+        NodeData {
+            name: String::new(),
+            transformation: Mat4::IDENTITY,
+            children: vec![],
+            meshes: vec![],
         }
     }
 }
 
 pub struct ModelAnimation {
+    pub model: Rc<RefCell<Model>>,
     pub duration: f32,
     pub ticks_per_second: f32,
     pub root_node: NodeData,
-    pub bone_animations: RefCell<Vec<BoneAnimation>>,
+    pub node_animations: RefCell<Vec<NodeAnimation>>,
     pub bone_data_map: Rc<RefCell<HashMap<BoneName, BoneData>>>,
     pub global_inverse_transform: Mat4,
 }
 
+impl Default for ModelAnimation {
+    fn default() -> Self {
+        ModelAnimation {
+            model: Rc::new(RefCell::new(Default::default())),
+            duration: 0.0,
+            ticks_per_second: 0.0,
+            root_node: Default::default(),
+            node_animations: RefCell::new(vec![]),
+            bone_data_map: Rc::new(RefCell::new(Default::default())),
+            global_inverse_transform: Default::default(),
+        }
+    }
+}
+
 impl ModelAnimation {
-    pub fn new(assimp_scene: &AssimpScene, model: &mut Model) -> Self {
+    pub fn new(assimp_scene: &AssimpScene, model: Rc<RefCell<Model>>) -> Self {
         let ai_scene = unsafe { assimp_scene.assimp_scene.as_ref() }.unwrap();
         let scene = Scene::new(ai_scene).unwrap();
+
+        if scene.animations.is_empty() {
+            return ModelAnimation::default();
+        }
 
         let duration = scene.animations[0].duration as f32;
         let ticks_per_second = scene.animations[0].ticks_per_second as f32;
@@ -54,15 +86,16 @@ impl ModelAnimation {
         // println!("bone_data_map: {:#?}", &model.bone_data_map.borrow());
 
         let mut model_animation = ModelAnimation {
+            model: model.clone(),
             duration,
             ticks_per_second,
             root_node,
-            bone_animations: vec![].into(),
-            bone_data_map: model.bone_data_map.clone(),
+            node_animations: vec![].into(),
+            bone_data_map: model.borrow().bone_data_map.clone(),
             global_inverse_transform
         };
 
-        model_animation.read_channel_bone_animations(&scene.animations[0], model);
+        model_animation.read_channel_node_animations(&scene.animations[0]);
         model_animation
     }
 
@@ -72,10 +105,12 @@ impl ModelAnimation {
         let mut node_data = NodeData {
             name: source.name.clone(),
             transformation: convert_to_mat4(&source.transformation),
-            children: vec![]
+            children: vec![],
+            meshes: source.meshes.clone(),
         };
 
         // println!("NodeData name: {}\n transform: {:?}\n", &node_data.name, &node_data.transformation);
+        println!("NodeData: {} meshes: {:?}", &node_data.name, &source.meshes);
 
         for child in source.children.borrow().iter() {
             let node = ModelAnimation::read_hierarchy_data(child);
@@ -84,27 +119,11 @@ impl ModelAnimation {
         node_data
     }
 
-    fn read_channel_bone_animations(&mut self, animation: &Animation, model: &mut Model) {
-        let mut bone_data_map = model.bone_data_map.borrow_mut();
-
+    /// converts channel vec of Russimp::NodeAnims into vec of NodeAnimation
+    fn read_channel_node_animations(&mut self, animation: &Animation) {
         for channel in &animation.channels {
-
-            if bone_data_map.get(&channel.name).is_none() {
-
-                println!("Bone_Data not found for channel name: {}", &channel.name);
-
-                let bone_info = BoneData::new(&channel.name.clone(), model.bone_count, Mat4::IDENTITY);
-
-                bone_data_map.insert(channel.name.clone(), bone_info);
-                model.bone_count += 1;
-            }
-
-            let bone_data = &bone_data_map[&channel.name];
-
-            let bone_index = bone_data.bone_index;
-            let bone = BoneAnimation::new(&channel.name.clone(), bone_index, &channel);
-
-            self.bone_animations.borrow_mut().push(bone);
+            let node_animation = NodeAnimation::new(&channel.name.clone(), &channel);
+            self.node_animations.borrow_mut().push(node_animation);
         }
     }
 }

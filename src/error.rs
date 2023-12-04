@@ -5,6 +5,7 @@ pub enum Error {
     ImageError(image::ImageError),
     ModelError(russimp::RussimpError),
     SceneError(String),
+    MeshError(String),
     TextureError(String),
     UnknownError(&'static str),
 }

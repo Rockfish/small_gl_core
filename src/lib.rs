@@ -14,7 +14,7 @@ pub mod model;
 
 pub mod model_animation;
 pub mod animator;
-pub mod bone_data;
+pub mod node_animation;
 pub mod model_mesh;
 pub mod shader;
 pub mod sprite_model;

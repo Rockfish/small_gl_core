@@ -37,7 +37,7 @@ impl Animator {
         let root_node = &animation.borrow().root_node;
 
         // self.calculate_bone_transform(root_node, Mat4::IDENTITY);
-        self.calculate_bone_transform(root_node, self.current_animation.borrow().global_inverse_transform.clone());
+        self.calculate_bone_transforms(root_node, self.current_animation.borrow().global_inverse_transform.clone());
 
         // println!("animation update completed.");
     }
@@ -47,43 +47,44 @@ impl Animator {
         self.current_time = 0.0;
     }
 
-    pub fn calculate_bone_transform(&self, node_data: &NodeData, parent_transform: Mat4) {
+    pub fn calculate_bone_transforms(&self, node_data: &NodeData, mut parent_transform: Mat4) {
+        // if node_data.name == "Character1_Weapon" {
+        //     println!("processing Character1_Weapon node");
+        //     parent_transform = Mat4::IDENTITY;
+        // }
 
-        let mut global_transformation: Mat4 = Mat4::IDENTITY;
-
-        let mut node_transform = &node_data.transformation;
-
-        {
-            let current_animation = self.current_animation.borrow();
-            let mut bone_animations = current_animation.bone_animations.borrow_mut();
-
-            let some_animation = bone_animations.iter_mut().find(|bone_anim| bone_anim.name == node_data.name);
-
-            if let Some(bone_animation) = some_animation {
-                bone_animation.update(self.current_time);
-                node_transform = &bone_animation.local_transform;
-            }
-
-            global_transformation = parent_transform * *node_transform;
-
-            // println!("node_name: {}\nparent_transform: {:?}\nnode_transform: {:?}\nglobal_transform: {:?}\n", &node_data.name, &parent_transform, &transform, &global_transformation);
-
-            if let Some(bone_data) = self
-                .current_animation
-                .borrow()
-                .bone_data_map
-                .borrow()
-                .get(&node_data.name)
-            {
-                let index = bone_data.bone_index as usize;
-                let mut final_bones = self.final_bone_matrices.borrow_mut();
-                // final_bones[index] = current_animation.global_inverse_transform * global_transformation * bone_data.offset;
-                final_bones[index] = global_transformation * bone_data.offset;
-            }
-        }
+        let global_transformation = self.calculate_transform(node_data, parent_transform);
 
         for child in node_data.children.iter() {
-            self.calculate_bone_transform(child, global_transformation);
+            self.calculate_bone_transforms(child, global_transformation);
         }
+    }
+
+    fn calculate_transform(&self, node_data: &NodeData, parent_transform: Mat4) -> Mat4 {
+
+        let current_animation = self.current_animation.borrow();
+        let bone_data_map = current_animation.bone_data_map.borrow();
+        let mut node_animations = current_animation.node_animations.borrow_mut();
+
+        let some_animation = node_animations.iter().find(|bone_anim| bone_anim.name == node_data.name);
+
+        let global_transformation = match some_animation {
+            Some(node_animation) => parent_transform * node_animation.get_animation_transform(self.current_time),
+            None => parent_transform * *&node_data.transformation,
+        };
+
+        // println!("node_name: {} global_transform: {:?}\n", &node_data.name, &global_transformation);
+
+        if let Some(bone_data) = bone_data_map.get(&node_data.name) {
+            let index = bone_data.bone_index as usize;
+            let mut final_bones = self.final_bone_matrices.borrow_mut();
+            final_bones[index] = global_transformation * bone_data.offset;
+        }
+
+        for mesh_index in node_data.meshes.iter() {
+            self.current_animation.borrow().model.borrow_mut().meshes.borrow_mut()[*mesh_index as usize].node_transform = global_transformation;
+        }
+
+        global_transformation
     }
 }

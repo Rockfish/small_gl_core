@@ -14,6 +14,7 @@ fn main() {
     // let model_path = "examples/sample_animation/source/cube_capoeira_martelo_cruzando.FBX.fbx";
     // let model_path = "/Users/john/Dev_Rust/Repos/ogldev/Content/box.obj";
     let model_path = "/Users/john/Dev_Rust/Repos/OpenGL-Animation/Resources/res/model.dae";
+    let model_path = "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Player.fbx";
     // let model_path = "examples/sample_animation/colorful_cube/scene.gltf";
     let scene = AssimpScene::load_assimp_scene(model_path).unwrap();
 
@@ -161,14 +162,14 @@ impl SceneParser {
 
         self.print_assimp_matrix(&bone.offset_matrix);
 
-        for (i, weight) in bone.weights.iter().enumerate() {
-            print!("     {} : vertex id {} ", i, weight.vertex_id);
-
-            let global_vertex_id = self.mesh_base_vertex[i] + weight.vertex_id as i32;
-
-            // assert(global_vertex_id < vertex_to_bones.size());
-            // vertex_to_bones[global_vertex_id].AddBoneData(bone_id, vw.mWeight);
-        }
+        // for (i, weight) in bone.weights.iter().enumerate() {
+        //     print!("     {} : vertex id {} ", i, weight.vertex_id);
+        //
+        //     // let global_vertex_id = self.mesh_base_vertex[i] + weight.vertex_id as i32;
+        //
+        //     // assert(global_vertex_id < vertex_to_bones.size());
+        //     // vertex_to_bones[global_vertex_id].AddBoneData(bone_id, vw.mWeight);
+        // }
 
         println!();
     }
@@ -188,22 +189,25 @@ impl SceneParser {
     fn parse_hierarchy(&mut self, scene: &Scene) {
         println!("\n*******************************************************");
         println!("Parsing the node hierarchy");
+        println!();
         self.parse_node(&scene.root.as_ref().unwrap());
     }
 
     fn parse_node(&mut self, node: &Rc<Node>) {
         self.print_space();
-        println!("Node name: '{}' num children {} num meshes {}", node.name, node.children.borrow().len(), node.meshes.len());
-        self.print_space();
-        println!("Node transformation:");
-        self.print_assimp_matrix(&node.transformation);
+        println!("Node: '{}'  num children: {} num meshes: {}", node.name, node.children.borrow().len(), node.meshes.len());
+        //println!("Node name: '{}' num children {} num meshes {} transform: {:?}", node.name, node.children.borrow().len(), node.meshes.len(), &node.transformation);
+        // self.print_space();
+        // println!("Node transformation:");
+        // self.print_assimp_matrix(&node.transformation);
 
         self.space_count += 4;
 
         for i in 0..node.children.borrow().len() {
+            // println!();
+            // self.print_space();
+            // println!("--- {} ---\n", i);
             println!();
-            self.print_space();
-            println!("--- {} ---\n", i);
             self.parse_node(node.children.borrow().get(i).unwrap());
         }
 
