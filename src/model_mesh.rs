@@ -140,7 +140,7 @@ impl ModelMesh {
                         specular_count += 1;
                         specular_count
                     }
-                    TextureType::Normal => {
+                    TextureType::Normals => {
                         normal_count += 1;
                         normal_count
                     }

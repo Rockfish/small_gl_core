@@ -142,7 +142,7 @@ impl From<TextureType> for aiTextureType {
             TextureType::Ambient => 0x3,
             TextureType::Emissive => 0x4,
             TextureType::Height => 0x5,
-            TextureType::Normal => 0x6,
+            TextureType::Normals => 0x6,
             TextureType::Shininess => 0x7,
             TextureType::Opacity => 0x8,
             TextureType::Displacement => 0x9,

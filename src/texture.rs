@@ -26,13 +26,44 @@ pub enum TextureType {
     Ambient,
     Emissive,
     Height,
-    Normal,
+    Normals,
     Shininess,
     Opacity,
     Displacement,
     Lightmap,
     Reflection,
     Unknown,
+}
+
+impl TextureType {
+    pub fn convert_from(r_texture_type: &russimp::material::TextureType) -> Self {
+        match r_texture_type {
+            russimp::material::TextureType::None => TextureType::None,
+            russimp::material::TextureType::Diffuse => TextureType::Diffuse,
+            russimp::material::TextureType::Specular => TextureType::Specular,
+            russimp::material::TextureType::Ambient => TextureType::Ambient,
+            russimp::material::TextureType::Emissive => TextureType::Emissive,
+            russimp::material::TextureType::Height => TextureType::Height,
+            russimp::material::TextureType::Normals => TextureType::Normals,
+            russimp::material::TextureType::Shininess => TextureType::Shininess,
+            russimp::material::TextureType::Opacity => TextureType::Opacity,
+            russimp::material::TextureType::Displacement => TextureType::Displacement,
+            russimp::material::TextureType::LightMap => TextureType::Lightmap,
+            russimp::material::TextureType::Reflection => TextureType::Reflection,
+            // russimp::material::TextureType::BaseColor => {}
+            // russimp::material::TextureType::NormalCamera => {}
+            // russimp::material::TextureType::EmissionColor => {}
+            // russimp::material::TextureType::Metalness => {}
+            // russimp::material::TextureType::Roughness => {}
+            // russimp::material::TextureType::AmbientOcclusion => {}
+            russimp::material::TextureType::Unknown => TextureType::Unknown,
+            // russimp::material::TextureType::Sheen => {}
+            // russimp::material::TextureType::ClearCoat => {}
+            // russimp::material::TextureType::Transmission => {}
+            // russimp::material::TextureType::Force32bit => {}
+            _ => panic!("Unsupported texture type")
+        }
+    }
 }
 
 impl Display for TextureType {
@@ -42,7 +73,7 @@ impl Display for TextureType {
             TextureType::Specular => write!(f, "texture_specular"),
             TextureType::Ambient => write!(f, "texture_ambient"),
             TextureType::Emissive => write!(f, "texture_emissive"),
-            TextureType::Normal => write!(f, "texture_normal"),
+            TextureType::Normals => write!(f, "texture_normal"),
             TextureType::Height => write!(f, "texture_height"),
             TextureType::Shininess => write!(f, "texture_shininess"),
             TextureType::Opacity => write!(f, "texture_opacity"),
