@@ -17,7 +17,7 @@ use std::path::PathBuf;
 use std::ptr::*;
 use std::rc::Rc;
 use russimp::utils;
-use crate::assimp_utils::convert_to_mat4;
+// use crate::assimp_utils::convert_to_mat4;
 
 pub type BoneName = String;
 
@@ -352,7 +352,8 @@ impl ModelBuilder {
                     let bone_info = BoneData {
                         name: bone.name.clone(),
                         bone_index: self.bone_count,
-                        offset: convert_to_mat4(&bone.offset_matrix),
+                        // offset: convert_to_mat4(&bone.offset_matrix),
+                        offset: bone.offset_matrix.clone(),
                     };
                     bone_data_map.insert(bone.name.clone(), bone_info);
                     bone_id = self.bone_count;

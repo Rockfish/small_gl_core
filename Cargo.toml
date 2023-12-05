@@ -11,7 +11,7 @@ image = "0.24.7"
 #russimp = "2.0.6"
 
 #russimp = { git = " https://github.com/jkvargas/russimp.git" }
-russimp = { path = "../russimp_rockfish" }
+russimp = { path = "../russimp_glam" }
 log = "0.4.20"
 serde = { version = "1", features = ["derive"] }
 

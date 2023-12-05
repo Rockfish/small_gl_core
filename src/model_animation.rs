@@ -8,7 +8,7 @@ use russimp::scene::Scene;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
-use crate::assimp_utils::convert_to_mat4;
+// use crate::assimp_utils::convert_to_mat4;
 
 /// NodeData is local version of aiNode
 #[derive(Debug)]
@@ -78,7 +78,8 @@ impl ModelAnimation {
         let ticks_per_second = scene.animations[0].ticks_per_second as f32;
 
         let root = scene.root.as_ref().unwrap().clone();
-        let global_inverse_transform = convert_to_mat4(&root.transformation).inverse();
+        // let global_inverse_transform = convert_to_mat4(&root.transformation).inverse();
+        let global_inverse_transform = root.transformation.inverse();
 
         let root_node = ModelAnimation::read_hierarchy_data(&root);
 
@@ -104,7 +105,8 @@ impl ModelAnimation {
 
         let mut node_data = NodeData {
             name: source.name.clone(),
-            transformation: convert_to_mat4(&source.transformation),
+            //transformation: convert_to_mat4(&source.transformation),
+            transformation: source.transformation.clone(),
             children: vec![],
             meshes: source.meshes.clone(),
         };
