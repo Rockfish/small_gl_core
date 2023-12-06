@@ -19,7 +19,7 @@ impl Animator {
         }
 
         Animator {
-            current_time: 0.0,
+            current_time: -1.0,
             delta_time: 0.0,
             current_animation: animation.clone(),
             final_bone_matrices: final_bone_matrices.into(),
@@ -27,7 +27,13 @@ impl Animator {
     }
 
     pub fn update_animation(&mut self, delta_time: f32) {
+
         self.delta_time = delta_time;
+
+        if self.current_time < 0.0 {
+            self.current_time = 0.0;
+        }
+
         self.current_time += self.current_animation.borrow().ticks_per_second * delta_time;
         self.current_time = self.current_time % self.current_animation.borrow().duration;
 
@@ -42,16 +48,32 @@ impl Animator {
         // println!("animation update completed.");
     }
 
+    pub fn update_animation_sequence(&mut self, offset: f32, duration: f32, delta_time: f32) {
+
+        self.delta_time = delta_time;
+
+        if self.current_time < 0.0 {
+            self.current_time = offset; // in ticks
+        }
+
+        self.current_time += self.current_animation.borrow().ticks_per_second * delta_time;
+
+        if self.current_time > duration {
+            self.current_time = offset; // in ticks
+        }
+
+        let animation = &self.current_animation.clone();
+        let root_node = &animation.borrow().root_node;
+
+        self.calculate_bone_transforms(root_node, self.current_animation.borrow().global_inverse_transform.clone());
+    }
+
     pub fn play_animation(&mut self, animation: &Rc<RefCell<ModelAnimation>>) {
         self.current_animation = animation.clone();
         self.current_time = 0.0;
     }
 
-    pub fn calculate_bone_transforms(&self, node_data: &NodeData, mut parent_transform: Mat4) {
-        // if node_data.name == "Character1_Weapon" {
-        //     println!("processing Character1_Weapon node");
-        //     parent_transform = Mat4::IDENTITY;
-        // }
+    pub fn calculate_bone_transforms(&self, node_data: &NodeData, parent_transform: Mat4) {
 
         let global_transformation = self.calculate_transform(node_data, parent_transform);
 
@@ -60,6 +82,12 @@ impl Animator {
         }
     }
 
+    // notes for blending animation -
+    // should calculate first since the transforms are propagated down the tree
+    // Later after all the values have been calculated for the nodes by the current tick time for the current anim sequence
+    // store the values in a map<NodeData, transform> for each sequence
+    // Then do a weighted merge maps
+    // and when doing the merge calculate and store the final_bone transforms, and store the mesh transforms, for the shader to apply
     fn calculate_transform(&self, node_data: &NodeData, parent_transform: Mat4) -> Mat4 {
 
         let current_animation = self.current_animation.borrow();

@@ -1,4 +1,3 @@
-use crate::assimp_scene::*;
 use crate::node_animation::BoneData;
 use crate::error::Error;
 use crate::error::Error::{MeshError, SceneError};
@@ -11,16 +10,13 @@ use glam::*;
 use russimp::sys::*;
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::ops::Add;
 use std::os::raw::c_uint;
 use std::path::PathBuf;
 use std::ptr::*;
 use std::rc::Rc;
 // use russimp::mesh::Mesh;
 use russimp::node::Node;
-use russimp::scene::{PostProcess, Scene};
-use russimp::utils;
-// use crate::assimp_utils::convert_to_mat4;
+use russimp::scene::{PostProcess, Scene};// use crate::assimp_utils::convert_to_mat4;
 
 pub type BoneName = String;
 
@@ -307,7 +303,7 @@ impl ModelBuilder {
 
         for (r_texture_type, r_texture) in material.textures.iter() {
             let texture_type = TextureType::convert_from(r_texture_type);
-            let texture = self.load_texture(texture_type, r_texture.borrow().filename.as_str())?;
+            let texture = self.load_texture(&texture_type, r_texture.borrow().filename.as_str())?;
             textures.push(texture);
         }
 
@@ -402,7 +398,7 @@ impl ModelBuilder {
 
     fn add_textures(&mut self) -> Result<(), Error> {
         for added_texture in &self.added_textures {
-            let texture = self.load_texture(added_texture.texture_type, added_texture.texture_filename.as_str())?;
+            let texture = self.load_texture(&added_texture.texture_type, added_texture.texture_filename.as_str())?;
             let mut mesh = self.meshes.iter_mut().find(|mesh| mesh.name == added_texture.mesh_name);
             if let Some(mut model_mesh) = mesh {
                 let path = self.directory.join(&added_texture.texture_filename).into_os_string();
@@ -434,7 +430,7 @@ impl ModelBuilder {
     }
 
     /// load or retrieve copy of texture
-    fn load_texture(&self, texture_type: TextureType, texture_filename: &str) -> Result<Rc<Texture>, Error> {
+    fn load_texture(&self, texture_type: &TextureType, texture_filename: &str) -> Result<Rc<Texture>, Error> {
         let full_path = self.directory.join(&texture_filename);
 
         let mut texture_cache = self
@@ -454,9 +450,11 @@ impl ModelBuilder {
                         gamma_correction: self.gamma_correction,
                         filter: TextureFilter::Linear,
                         wrap: TextureWrap::Clamp,
-                        texture_type,
+                        texture_type: texture_type.clone(),
                     },
                 )?);
+
+                println!("loaded texture: {:?}", &texture);
 
                 texture_cache.push(texture.clone());
                 Ok(texture)

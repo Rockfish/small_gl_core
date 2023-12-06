@@ -24,19 +24,17 @@ use small_gl_core::model::{Model, ModelBuilder};
 use small_gl_core::shader::Shader;
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::thread::sleep;
-use std::time::Duration;
 use small_gl_core::texture::TextureType;
 
 const SCR_WIDTH: f32 = 800.0;
 const SCR_HEIGHT: f32 = 800.0;
 
 // Lighting
-const lightFactor: f32 = 0.8;
-const nonBlue: f32 = 0.9;
+const LIGHT_FACTOR: f32 = 1.0;
+const NON_BLUE: f32 = 0.9;
 
-const floorLightFactor: f32 = 0.35;
-const floorNonBlue: f32 = 0.7;
+const FLOOR_LIGHT_FACTOR: f32 = 0.35;
+const FLOOR_NON_BLUE: f32 = 0.7;
 
 // Struct for passing state between the window loop and the event handler.
 struct State {
@@ -117,6 +115,8 @@ fn main() {
         );
 
     let model_path = "examples/sample_animation/vampire/dancing_vampire.dae";
+    // let model_path = "/Users/john/Dev_Rust/Dev/russimp_glam/models/GLTF2/round_wooden_table_01_4k/round_wooden_table_01_4k.gltf";
+    // let model_path = "/Users/john/Dev_Rust/Dev/learn_opengl_with_rust/resources/objects/nanosuit/nanosuit.obj";
     // let model_path = "/Users/john/Dev_Assets/glTF-Sample-Models/2.0/CesiumMan/glTF/CesiumMan.gltf"; // works
     // let model_path = "/Users/john/Dev_Rust/Repos/OpenGL-Tutorials/LearnOpenGL/8.Guest Articles/2020/2.Skeletal Animation/resources/objects/vampire/dancing_vampire.dae";
     let model_path = "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Player.fbx";
@@ -129,17 +129,18 @@ fn main() {
     // let model_path = "examples/sample_animation/colorful_cube/scene.gltf";  // small cube, doesn't animate
     // let model_path = "/Users/john/Dev_Rust/Dev/learn_opengl_with_rust/resources/objects/cyborg/cyborg.obj"; // not animated
 
-    let scene = AssimpScene::load_assimp_scene(model_path).unwrap();
+    // let scene = AssimpScene::load_assimp_scene(model_path).unwrap();
+    let scene = ModelBuilder::load_russimp_scene(model_path).unwrap();
 
     let dancing_model = ModelBuilder::new("model", shader.clone(), model_path)
         .add_texture("Player", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Player_D.tga") // Player model
         .add_texture("Player", TextureType::Specular, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Player_M.tga") // Player model
         .add_texture("Player", TextureType::Emissive, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Player_E.tga") // Player model
-        .add_texture("Player", TextureType::Normal, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Player_NRM.tga") // Player model
+        .add_texture("Player", TextureType::Normals, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Player_NRM.tga") // Player model
         .add_texture("Gun", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Gun_D.tga") // Player model
         .add_texture("Gun", TextureType::Specular, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Gun_M.tga") // Player model
         .add_texture("Gun", TextureType::Emissive, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Gun_E.tga") // Player model
-        .add_texture("Gun", TextureType::Normal, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Gun_NRM.tga") // Player model
+        .add_texture("Gun", TextureType::Normals, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Gun_NRM.tga") // Player model
         // .add_texture("characterMedium", TextureType::Diffuse, "/Users/john/Dev_Assets/animated-characters-3/Skins/humanFemaleA.png")  // characterMedium model
         // .add_texture("Box016", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/small_gl_core/examples/sample_animation/container2.png") // capoeira
         // .add_texture("Box009", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/small_gl_core/examples/sample_animation/container2.png") // capoeira
@@ -169,12 +170,14 @@ fn main() {
     // Lighting
     let lightDir: Vec3 = vec3(-0.8, 0.0, -1.0).normalize_or_zero();
     let playerLightDir: Vec3 = vec3(-1.0, -1.0, -1.0).normalize_or_zero();
-    let lightColor: Vec3 = lightFactor * 1.0 * vec3(nonBlue * 0.406, nonBlue * 0.723, 1.0);
-    // const lightColor: Vec3 = lightFactor * 1.0 * vec3(0.406, 0.723, 1.0);
-    let floorLightColor: Vec3 = floorLightFactor * 1.0 * vec3(floorNonBlue * 0.406, floorNonBlue * 0.723, 1.0);
-    let floorAmbientColor: Vec3 = floorLightFactor * 0.50 * vec3(floorNonBlue * 0.7, floorNonBlue * 0.7, 0.7);
 
-    let ambientColor: Vec3 = lightFactor * 1.0 * vec3(nonBlue * 0.7, nonBlue * 0.7, 0.7);
+    let lightColor: Vec3 = LIGHT_FACTOR * 1.0 * vec3(NON_BLUE * 0.406, NON_BLUE * 0.723, 1.0);
+    // const lightColor: Vec3 = LIGHT_FACTOR * 1.0 * vec3(0.406, 0.723, 1.0);
+
+    let floorLightColor: Vec3 = FLOOR_LIGHT_FACTOR * 1.0 * vec3(FLOOR_NON_BLUE * 0.406, FLOOR_NON_BLUE * 0.723, 1.0);
+    let floorAmbientColor: Vec3 = FLOOR_LIGHT_FACTOR * 0.50 * vec3(FLOOR_NON_BLUE * 0.7, FLOOR_NON_BLUE * 0.7, 0.7);
+
+    let ambientColor: Vec3 = LIGHT_FACTOR * 1.0 * vec3(NON_BLUE * 0.7, NON_BLUE * 0.7, 0.7);
 
     state.lastFrame = glfw.get_time() as f32;
 
@@ -191,7 +194,18 @@ fn main() {
 
         // println!("time: {}   delta: {}", state.lastFrame, state.deltaTime);
         // animator.update_animation(state.deltaTime);
-        animator.update_animation(0.01);
+        // animator.update_animation(0.01);
+
+        // animation - duration: 294   ticks_per_second: 30
+
+        let movement_duration = 20.0f32;
+
+        // animator.update_animation_sequence(55.0, 130.0, state.deltaTime); // Idle
+        // animator.update_animation_sequence(134.0, 154.0, state.deltaTime); // Forward running
+        // animator.update_animation_sequence(159.0, 179.0, state.deltaTime); // Backwards running
+        animator.update_animation_sequence(184.0, 204.0, state.deltaTime);  // Right running
+        // animator.update_animation_sequence(209.0, 229.0, state.deltaTime); // Left running
+        // animator.update_animation_sequence(234.0, 293.0, state.deltaTime); // Dying
 
         unsafe {
             // render

@@ -18,7 +18,7 @@ pub enum TextureWrap {
     Repeat,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Eq, Hash, PartialEq)]
 pub enum TextureType {
     None,
     Diffuse,
@@ -32,7 +32,17 @@ pub enum TextureType {
     Displacement,
     Lightmap,
     Reflection,
+    BaseColor,
     Unknown,
+    NormalCamera,
+    EmissionColor,
+    Metalness,
+    Roughness,
+    AmbientOcclusion,
+    Sheen,
+    ClearCoat,
+    Transmission,
+    Force32bit,
 }
 
 impl TextureType {
@@ -50,18 +60,18 @@ impl TextureType {
             russimp::material::TextureType::Displacement => TextureType::Displacement,
             russimp::material::TextureType::LightMap => TextureType::Lightmap,
             russimp::material::TextureType::Reflection => TextureType::Reflection,
-            // russimp::material::TextureType::BaseColor => {}
-            // russimp::material::TextureType::NormalCamera => {}
-            // russimp::material::TextureType::EmissionColor => {}
-            // russimp::material::TextureType::Metalness => {}
-            // russimp::material::TextureType::Roughness => {}
-            // russimp::material::TextureType::AmbientOcclusion => {}
+            russimp::material::TextureType::BaseColor => TextureType::BaseColor,
+            russimp::material::TextureType::NormalCamera => TextureType::NormalCamera,
+            russimp::material::TextureType::EmissionColor => TextureType::EmissionColor,
+            russimp::material::TextureType::Metalness => TextureType::Metalness,
+            russimp::material::TextureType::Roughness => TextureType::Roughness,
+            russimp::material::TextureType::AmbientOcclusion => TextureType::AmbientOcclusion,
             russimp::material::TextureType::Unknown => TextureType::Unknown,
-            // russimp::material::TextureType::Sheen => {}
-            // russimp::material::TextureType::ClearCoat => {}
-            // russimp::material::TextureType::Transmission => {}
-            // russimp::material::TextureType::Force32bit => {}
-            _ => panic!("Unsupported texture type")
+            russimp::material::TextureType::Sheen => TextureType::Sheen,
+            russimp::material::TextureType::ClearCoat => TextureType::ClearCoat,
+            russimp::material::TextureType::Transmission => TextureType::Transmission,
+            russimp::material::TextureType::Force32bit => TextureType::Force32bit,
+            _ => panic!("Unsupported texture type: {:?}", r_texture_type)
         }
     }
 }
@@ -80,8 +90,18 @@ impl Display for TextureType {
             TextureType::Displacement => write!(f, "texture_displacement"),
             TextureType::Lightmap => write!(f, "texture_lightmap"),
             TextureType::Reflection => write!(f, "texture_reflection"),
+            TextureType::BaseColor => write!(f, "texture_basecolor"),
             TextureType::Unknown => write!(f, "texture_unknown"),
             TextureType::None => write!(f, "texture_none"),
+            TextureType::NormalCamera => write!(f, "texture_normalcamera"),
+            TextureType::EmissionColor => write!(f, "texture_emissioncolor"),
+            TextureType::Metalness => write!(f, "texture_metalness"),
+            TextureType::Roughness => write!(f, "texture_roughness"),
+            TextureType::AmbientOcclusion => write!(f, "texture_ambientocclusion"),
+            TextureType::Sheen => write!(f, "texture_sheen"),
+            TextureType::ClearCoat => write!(f, "texture_clearcoat"),
+            TextureType::Transmission => write!(f, "texture_transmission"),
+            TextureType::Force32bit => write!(f, "texture_force32bit"),
         }
     }
 }

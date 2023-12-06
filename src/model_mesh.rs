@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::gl;
 use crate::gl::{GLsizei, GLsizeiptr, GLvoid};
 use crate::shader::Shader;
@@ -122,38 +123,18 @@ impl ModelMesh {
     //     }
     // }
     pub fn render(&self, shader: &Rc<Shader>) {
-        let mut diffuse_count: u32 = 0;
-        let mut specular_count: u32 = 0;
-        let mut normal_count: u32 = 0;
-        let mut height_count: u32 = 0;
-        let mut emissive_count: u32 = 0;
+
+        let mut texture_count_map: HashMap<TextureType, u32> = HashMap::new();
 
         unsafe {
             for (texture_unit, texture) in self.textures.iter().enumerate() {
 
-                let num = match texture.texture_type {
-                    TextureType::Diffuse => {
-                        diffuse_count += 1;
-                        diffuse_count
-                    }
-                    TextureType::Specular => {
-                        specular_count += 1;
-                        specular_count
-                    }
-                    TextureType::Normals => {
-                        normal_count += 1;
-                        normal_count
-                    }
-                    TextureType::Height => {
-                        height_count += 1;
-                        height_count
-                    }
-                    TextureType::Emissive => {
-                        emissive_count += 1;
-                        emissive_count
-                    }
-                    _ => todo!(),
-                };
+                if !texture_count_map.contains_key(&texture.texture_type) {
+                    texture_count_map.insert(texture.texture_type.clone(), 0);
+                }
+
+                let num = texture_count_map[&texture.texture_type] + 1;
+                *texture_count_map.get_mut(&texture.texture_type).unwrap() = num;
 
                 let texture_name = texture
                     .texture_type

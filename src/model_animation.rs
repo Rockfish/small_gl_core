@@ -1,4 +1,3 @@
-use crate::assimp_scene::AssimpScene;
 use crate::node_animation::{NodeAnimation, BoneData};
 use crate::model::{BoneName, Model};
 use glam::Mat4;
@@ -8,7 +7,6 @@ use russimp::scene::Scene;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
-// use crate::assimp_utils::convert_to_mat4;
 
 /// NodeData is local version of aiNode
 #[derive(Debug)]
@@ -66,9 +64,7 @@ impl Default for ModelAnimation {
 }
 
 impl ModelAnimation {
-    pub fn new(assimp_scene: &AssimpScene, model: Rc<RefCell<Model>>) -> Self {
-        let ai_scene = unsafe { assimp_scene.assimp_scene.as_ref() }.unwrap();
-        let scene = Scene::new(ai_scene).unwrap();
+    pub fn new(scene: &Scene, model: Rc<RefCell<Model>>) -> Self {
 
         if scene.animations.is_empty() {
             return ModelAnimation::default();
@@ -76,6 +72,8 @@ impl ModelAnimation {
 
         let duration = scene.animations[0].duration as f32;
         let ticks_per_second = scene.animations[0].ticks_per_second as f32;
+
+        println!("animation - duration: {}   ticks_per_second: {}", &duration, &ticks_per_second);
 
         let root = scene.root.as_ref().unwrap().clone();
         // let global_inverse_transform = convert_to_mat4(&root.transformation).inverse();
