@@ -4,9 +4,9 @@ use russimp::bone::Bone;
 use russimp::mesh::Mesh;
 use russimp::node::Node;
 use russimp::scene::Scene;
-use small_gl_core::assimp_scene::AssimpScene;
 use small_gl_core::utils::HashMap;
 use std::rc::Rc;
+use small_gl_core::model::ModelBuilder;
 
 fn main() {
     let model_path = "examples/sample_animation/animated_cube/AnimatedCube.gltf";
@@ -15,7 +15,7 @@ fn main() {
     let model_path = "/Users/john/Dev_Rust/Repos/OpenGL-Animation/Resources/res/model.dae";
     let model_path = "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Player.fbx";
     // let model_path = "examples/sample_animation/colorful_cube/scene.gltf";
-    let scene = AssimpScene::load_assimp_scene(model_path).unwrap();
+    let scene = ModelBuilder::load_russimp_scene(model_path).unwrap();
 
     let mut parse = SceneParser::new();
     parse.parse_scene(&scene);
@@ -94,10 +94,7 @@ impl SceneParser {
         }
     }
 
-    fn parse_scene(&mut self, assimp_scene: &AssimpScene) {
-        let ai_scene = unsafe { assimp_scene.assimp_scene.as_ref() }.unwrap();
-        let scene = Scene::new(ai_scene).unwrap();
-
+    fn parse_scene(&mut self, scene: &Scene) {
         self.parse_meshes(&scene);
         self.validate_bones();
         self.parse_hierarchy(&scene);

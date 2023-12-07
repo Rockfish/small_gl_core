@@ -13,7 +13,7 @@ use glam::*;
 use glfw::{Action, Context, Key};
 use image::ColorType;
 use log::error;
-use small_gl_core::animator::Animator;
+use small_gl_core::animator::{AnimationClip, AnimationRepeat, Animator};
 use small_gl_core::camera::{Camera, CameraMovement};
 use small_gl_core::gl;
 use small_gl_core::gl::{GLint, GLsizei, GLuint, GLvoid};
@@ -157,8 +157,23 @@ fn main() {
 
     let dancing_model = Rc::new(RefCell::new(dancing_model));
 
+    // animator.update_animation_sequence(55.0, 130.0, state.deltaTime); // Idle
+    // animator.update_animation_sequence(134.0, 154.0, state.deltaTime); // Forward running
+    // animator.update_animation_sequence(159.0, 179.0, state.deltaTime); // Backwards running
+    // animator.update_animation_sequence(209.0, 229.0, state.deltaTime); // Left running
+    // animator.update_animation_sequence(234.0, 293.0, state.deltaTime); // Dying
+
+    let idle = Rc::new(AnimationClip::new("idle", 55.0, 130.0, AnimationRepeat::Forever));
+    let forward = Rc::new(AnimationClip::new("forward", 134.0, 154.0, AnimationRepeat::Forever));
+    let backwards = Rc::new(AnimationClip::new("backwards", 159.0, 179.0, AnimationRepeat::Forever));
+    let right = Rc::new(AnimationClip::new("right", 184.0, 204.0, AnimationRepeat::Forever));
+    let left = Rc::new(AnimationClip::new("left", 209.0, 229.0, AnimationRepeat::Forever));
+    let dying = Rc::new(AnimationClip::new("dying", 234.0, 293.0, AnimationRepeat::Once));
+
     let dance_animation = Rc::new(RefCell::new(ModelAnimation::new(&scene, dancing_model.clone())));
     let mut animator = Animator::new(&dance_animation);
+
+    animator.play_clip(&forward);
 
     // Lighting
     let lightDir: Vec3 = vec3(-0.8, 0.0, -1.0).normalize_or_zero();
@@ -191,14 +206,11 @@ fn main() {
 
         // animation - duration: 294   ticks_per_second: 30
 
-        let movement_duration = 20.0f32;
 
-        // animator.update_animation_sequence(55.0, 130.0, state.deltaTime); // Idle
-        // animator.update_animation_sequence(134.0, 154.0, state.deltaTime); // Forward running
-        // animator.update_animation_sequence(159.0, 179.0, state.deltaTime); // Backwards running
-        animator.update_animation_sequence(184.0, 204.0, state.deltaTime); // Right running
-                                                                           // animator.update_animation_sequence(209.0, 229.0, state.deltaTime); // Left running
-                                                                           // animator.update_animation_sequence(234.0, 293.0, state.deltaTime); // Dying
+
+
+
+        animator.update_animation(state.deltaTime);
 
         unsafe {
             // render
