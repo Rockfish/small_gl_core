@@ -2,6 +2,7 @@ use crate::error::Error;
 use crate::gl;
 use crate::gl::{GLint, GLsizei, GLuint, GLvoid};
 use image::ColorType;
+use russimp::sys::aiTextureType;
 use std::ffi::{c_uint, OsString};
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
@@ -106,7 +107,7 @@ impl Display for TextureType {
     }
 }
 
-impl From<TextureType> for crate::assimp_scene::aiTextureType {
+impl From<TextureType> for aiTextureType {
     fn from(value: TextureType) -> Self {
         match value {
             TextureType::None => 0,

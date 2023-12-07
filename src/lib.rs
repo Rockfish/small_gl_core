@@ -1,20 +1,16 @@
 #![feature(offset_of)]
 
-pub mod assimp_scene;
-pub mod camera;
-pub mod error;
-
 #[allow(clippy::all)]
 pub mod gl;
 
+pub mod animator;
+pub mod assimp_dump;
+pub mod assimp_utils;
+pub mod camera;
+pub mod error;
 pub mod macros;
 pub mod mesh;
-
 pub mod model;
-
-pub mod animator;
-mod assimp_dump;
-mod assimp_utils;
 pub mod model_animation;
 pub mod model_mesh;
 pub mod node_animation;
