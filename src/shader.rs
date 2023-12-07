@@ -267,12 +267,7 @@ fn check_compile_errors(shader_id: u32, check_type: &str) -> Result<(), String> 
                 gl::GetShaderiv(shader_id, gl::INFO_LOG_LENGTH, &mut len);
                 // Subtract 1 to skip the trailing null character.
                 let mut info_log = vec![0; len as usize - 1];
-                gl::GetProgramInfoLog(
-                    shader_id,
-                    1024,
-                    ptr::null_mut(),
-                    info_log.as_mut_ptr() as *mut GLchar,
-                );
+                gl::GetProgramInfoLog(shader_id, 1024, ptr::null_mut(), info_log.as_mut_ptr() as *mut GLchar);
                 return Err(String::from_utf8_lossy(&info_log).to_string());
             }
         } else {
@@ -282,12 +277,7 @@ fn check_compile_errors(shader_id: u32, check_type: &str) -> Result<(), String> 
                 gl::GetProgramiv(shader_id, gl::INFO_LOG_LENGTH, &mut len);
                 // Subtract 1 to skip the trailing null character.
                 let mut info_log = vec![0; len as usize - 1];
-                gl::GetProgramInfoLog(
-                    shader_id,
-                    1024,
-                    ptr::null_mut(),
-                    info_log.as_mut_ptr() as *mut GLchar,
-                );
+                gl::GetProgramInfoLog(shader_id, 1024, ptr::null_mut(), info_log.as_mut_ptr() as *mut GLchar);
                 let error_msg = String::from_utf8_lossy(&info_log).to_string();
                 return Err(error_msg);
             }

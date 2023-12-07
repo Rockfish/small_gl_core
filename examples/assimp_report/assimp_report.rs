@@ -1,13 +1,12 @@
-use std::collections::HashMap;
-use std::rc::Rc;
+use glam::Mat4;
 use russimp::animation::Animation;
 use russimp::bone::Bone;
-use russimp::Matrix4x4;
 use russimp::mesh::Mesh;
 use russimp::node::Node;
 use russimp::scene::Scene;
-use russimp::sys::aiMatrix4x4;
 use small_gl_core::assimp_scene::AssimpScene;
+use small_gl_core::utils::HashMap;
+use std::rc::Rc;
 
 fn main() {
     let model_path = "examples/sample_animation/animated_cube/AnimatedCube.gltf";
@@ -42,7 +41,10 @@ impl VertexBoneData {
     pub fn add_bone_data(&mut self, bone_id: i32, weight: f32) {
         for i in 0..self.index {
             if self.bone_ids[i as usize] == bone_id {
-                println!("bone {} already found at index {} old weight {} new weight {}\n", bone_id, i, self.weights[i as usize], weight);
+                println!(
+                    "bone {} already found at index {} old weight {} new weight {}\n",
+                    bone_id, i, self.weights[i as usize], weight
+                );
                 return;
             }
         }
@@ -50,7 +52,10 @@ impl VertexBoneData {
         println!("bone {} weight {} at index {}\n", bone_id, weight, self.index);
 
         if self.index >= MAX_NUM_BONES_PER_VERTEX {
-            println!("Warning: exceeding the maximum number of bones per vertex (current index {})\n", self.index);
+            println!(
+                "Warning: exceeding the maximum number of bones per vertex (current index {})\n",
+                self.index
+            );
         }
 
         if self.index < 100 {
@@ -112,10 +117,13 @@ impl SceneParser {
             let num_indices = mesh.faces.len() * 3;
             let num_bones = mesh.bones.len();
 
-            println!("  Mesh {} '{}': vertices {} indices {} bones {}\n", i, mesh.name, num_vertices, num_indices, num_bones);
+            println!(
+                "  Mesh {} '{}': vertices {} indices {} bones {}\n",
+                i, mesh.name, num_vertices, num_indices, num_bones
+            );
 
             total_vertices += num_vertices as i32;
-            total_indices  += num_indices as i32;
+            total_indices += num_indices as i32;
             total_bones += num_bones as i32;
             // self.vertex_to_bones.push(total_vertices)
 
@@ -156,7 +164,11 @@ impl SceneParser {
     }
 
     fn parse_bone(&mut self, mesh_index: usize, bone: &Bone) {
-        println!("      Bone '{}': num vertices affected by this bone: {}", bone.name, bone.weights.len());
+        println!(
+            "      Bone '{}': num vertices affected by this bone: {}",
+            bone.name,
+            bone.weights.len()
+        );
 
         let bone_id = self.get_bone_id(bone);
 
@@ -195,7 +207,12 @@ impl SceneParser {
 
     fn parse_node(&mut self, node: &Rc<Node>) {
         self.print_space();
-        println!("Node: '{}'  num children: {} num meshes: {}", node.name, node.children.borrow().len(), node.meshes.len());
+        println!(
+            "Node: '{}'  num children: {} num meshes: {}",
+            node.name,
+            node.children.borrow().len(),
+            node.meshes.len()
+        );
         //println!("Node name: '{}' num children {} num meshes {} transform: {:?}", node.name, node.children.borrow().len(), node.meshes.len(), &node.transformation);
         // self.print_space();
         // println!("Node transformation:");
@@ -225,13 +242,19 @@ impl SceneParser {
     }
 
     fn parse_single_animation(&mut self, animation_id: usize, animation: &Animation) {
-
         println!("animation: {}   name: {}", animation_id, animation.name);
         println!("ticks_per_second: {}  duration: {}", animation.ticks_per_second, animation.duration);
         println!("NodeAdmin channel length: {}\n", animation.channels.len());
 
         for (i, channel) in animation.channels.iter().enumerate() {
-            println!("channel id: {}  name: {}  position keys: {}  rotation keys: {}, scaling keys: {}", i, channel.name, channel.position_keys.len(), channel.rotation_keys.len(), channel.scaling_keys.len());
+            println!(
+                "channel id: {}  name: {}  position keys: {}  rotation keys: {}, scaling keys: {}",
+                i,
+                channel.name,
+                channel.position_keys.len(),
+                channel.rotation_keys.len(),
+                channel.scaling_keys.len()
+            );
         }
         println!();
     }
@@ -249,10 +272,14 @@ impl SceneParser {
         }
     }
 
-    fn print_assimp_matrix(&self, m: &Matrix4x4) {
-        self.print_space(); print!("{} {} {} {}\n", m.a1, m.a2, m.a3, m.a4);
-        self.print_space(); print!("{} {} {} {}\n", m.b1, m.b2, m.b3, m.b4);
-        self.print_space(); print!("{} {} {} {}\n", m.c1, m.c2, m.c3, m.c4);
-        self.print_space(); print!("{} {} {} {}\n", m.d1, m.d2, m.d3, m.d4);
+    fn print_assimp_matrix(&self, m: &Mat4) {
+        self.print_space();
+        print!("{}\n", m.x_axis);
+        self.print_space();
+        print!("{}\n", m.y_axis);
+        self.print_space();
+        print!("{}\n", m.z_axis);
+        self.print_space();
+        print!("{}\n", m.w_axis);
     }
 }

@@ -16,21 +16,21 @@ use russimp::scene::*;
 use russimp::sys::*;
 use russimp::*;
 
-pub const aiTextureType_NONE: c_uint = 0x0;
-pub const aiTextureType_DIFFUSE: c_uint = 0x1;
-pub const aiTextureType_SPECULAR: c_uint = 0x2;
-pub const aiTextureType_AMBIENT: c_uint = 0x3;
-pub const aiTextureType_EMISSIVE: c_uint = 0x4;
-pub const aiTextureType_HEIGHT: c_uint = 0x5;
-pub const aiTextureType_NORMALS: c_uint = 0x6;
-pub const aiTextureType_SHININESS: c_uint = 0x7;
-pub const aiTextureType_OPACITY: c_uint = 0x8;
-pub const aiTextureType_DISPLACEMENT: c_uint = 0x9;
-pub const aiTextureType_LIGHTMAP: c_uint = 0xA;
-pub const aiTextureType_REFLECTION: c_uint = 0xB;
-pub const aiTextureType_UNKNOWN: c_uint = 0xC;
+// pub const aiTextureType_NONE: c_uint = 0x0;
+// pub const aiTextureType_DIFFUSE: c_uint = 0x1;
+// pub const aiTextureType_SPECULAR: c_uint = 0x2;
+// pub const aiTextureType_AMBIENT: c_uint = 0x3;
+// pub const aiTextureType_EMISSIVE: c_uint = 0x4;
+// pub const aiTextureType_HEIGHT: c_uint = 0x5;
+// pub const aiTextureType_NORMALS: c_uint = 0x6;
+// pub const aiTextureType_SHININESS: c_uint = 0x7;
+// pub const aiTextureType_OPACITY: c_uint = 0x8;
+// pub const aiTextureType_DISPLACEMENT: c_uint = 0x9;
+// pub const aiTextureType_LIGHTMAP: c_uint = 0xA;
+// pub const aiTextureType_REFLECTION: c_uint = 0xB;
+// pub const aiTextureType_UNKNOWN: c_uint = 0xC;
 
-type aiTextureType = u32;
+pub(crate) type aiTextureType = u32;
 
 // This is just a lightweight wrapper around aiScene
 #[derive(Debug)]
@@ -58,10 +58,7 @@ impl AssimpScene {
         Ok(assimp_scene)
     }
 
-    pub fn from_file(
-        file_path: String,
-        flags: PostProcessSteps,
-    ) -> Result<AssimpScene, RussimpError> {
+    pub fn from_file(file_path: String, flags: PostProcessSteps) -> Result<AssimpScene, RussimpError> {
         let bitwise_flag = flags.into_iter().fold(0, |acc, x| acc | (x as u32));
         let file_path = CString::new(file_path).unwrap();
 
@@ -71,9 +68,7 @@ impl AssimpScene {
         //     return Ok(AssimpScene{assimp_scene: raw_scene.unwrap()});
         // }
         // Err(AssimpScene::get_error())
-        Ok(AssimpScene {
-            assimp_scene: raw_scene,
-        })
+        Ok(AssimpScene { assimp_scene: raw_scene })
     }
 
     #[inline]
@@ -99,11 +94,7 @@ impl Drop for AssimpScene {
 /// # Safety
 ///
 /// This function calls into the assimp library.
-pub unsafe fn get_material_texture_filename(
-    material: *mut aiMaterial,
-    texture_type: TextureType,
-    index: u32,
-) -> Result<String, Error> {
+pub unsafe fn get_material_texture_filename(material: *mut aiMaterial, texture_type: TextureType, index: u32) -> Result<String, Error> {
     let mut path = MaybeUninit::uninit();
     let mut texture_mapping = MaybeUninit::uninit();
     let mut uv_index = MaybeUninit::uninit();
@@ -133,32 +124,4 @@ pub unsafe fn get_material_texture_filename(
     Err(Error::TextureError("aiGetMaterialTexture Error: Texture not found".to_string()))
 }
 
-impl From<TextureType> for aiTextureType {
-    fn from(value: TextureType) -> Self {
-        match value {
-            TextureType::None => 0,
-            TextureType::Diffuse => 1,
-            TextureType::Specular => 2,
-            TextureType::Ambient => 3,
-            TextureType::Emissive => 4,
-            TextureType::Height => 5,
-            TextureType::Normals => 6,
-            TextureType::Shininess => 7,
-            TextureType::Opacity => 8,
-            TextureType::Displacement => 9,
-            TextureType::Lightmap => 10,
-            TextureType::Reflection => 11,
-            TextureType::BaseColor => 12,
-            TextureType::NormalCamera => 13,
-            TextureType::EmissionColor => 14,
-            TextureType::Metalness => 15,
-            TextureType::Roughness => 16,
-            TextureType::AmbientOcclusion => 17,
-            TextureType::Unknown => 18,
-            TextureType::Sheen => 19,
-            TextureType::ClearCoat => 20,
-            TextureType::Transmission => 21,
-            TextureType::Force32bit => 2147483647,
-        }
-    }
-}
+

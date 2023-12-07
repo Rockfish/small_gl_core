@@ -71,7 +71,7 @@ impl TextureType {
             russimp::material::TextureType::ClearCoat => TextureType::ClearCoat,
             russimp::material::TextureType::Transmission => TextureType::Transmission,
             russimp::material::TextureType::Force32bit => TextureType::Force32bit,
-            _ => panic!("Unsupported texture type: {:?}", r_texture_type)
+            _ => panic!("Unsupported texture type: {:?}", r_texture_type),
         }
     }
 }
@@ -102,6 +102,36 @@ impl Display for TextureType {
             TextureType::ClearCoat => write!(f, "texture_clearcoat"),
             TextureType::Transmission => write!(f, "texture_transmission"),
             TextureType::Force32bit => write!(f, "texture_force32bit"),
+        }
+    }
+}
+
+impl From<TextureType> for crate::assimp_scene::aiTextureType {
+    fn from(value: TextureType) -> Self {
+        match value {
+            TextureType::None => 0,
+            TextureType::Diffuse => 1,
+            TextureType::Specular => 2,
+            TextureType::Ambient => 3,
+            TextureType::Emissive => 4,
+            TextureType::Height => 5,
+            TextureType::Normals => 6,
+            TextureType::Shininess => 7,
+            TextureType::Opacity => 8,
+            TextureType::Displacement => 9,
+            TextureType::Lightmap => 10,
+            TextureType::Reflection => 11,
+            TextureType::BaseColor => 12,
+            TextureType::NormalCamera => 13,
+            TextureType::EmissionColor => 14,
+            TextureType::Metalness => 15,
+            TextureType::Roughness => 16,
+            TextureType::AmbientOcclusion => 17,
+            TextureType::Unknown => 18,
+            TextureType::Sheen => 19,
+            TextureType::ClearCoat => 20,
+            TextureType::Transmission => 21,
+            TextureType::Force32bit => 2147483647,
         }
     }
 }
@@ -168,10 +198,7 @@ pub struct Texture {
 }
 
 impl Texture {
-    pub fn new(
-        texture_path: impl Into<OsString>,
-        texture_config: &TextureConfig,
-    ) -> Result<Texture, Error> {
+    pub fn new(texture_path: impl Into<OsString>, texture_config: &TextureConfig) -> Result<Texture, Error> {
         let path = PathBuf::from(texture_path.into());
         let (id, width, height) = Texture::load_texture(&path, texture_config)?;
         let texture =
@@ -185,10 +212,7 @@ impl Texture {
         Ok(texture)
     }
 
-    pub fn load_texture(
-        texture_path: &PathBuf,
-        texture_config: &TextureConfig,
-    ) -> Result<(GLuint, u32, u32), Error> {
+    pub fn load_texture(texture_path: &PathBuf, texture_config: &TextureConfig) -> Result<(GLuint, u32, u32), Error> {
         let mut texture_id: GLuint = 0;
 
         let img = image::open(texture_path)?;
@@ -196,11 +220,7 @@ impl Texture {
 
         let color_type = img.color();
 
-        let img = if texture_config.flip_v {
-            img.flipv()
-        } else {
-            img
-        };
+        let img = if texture_config.flip_v { img.flipv() } else { img };
 
         unsafe {
             let internal_format: c_uint;
@@ -211,11 +231,7 @@ impl Texture {
                     data_format = gl::RED;
                 }
                 ColorType::Rgb8 => {
-                    internal_format = if texture_config.gamma_correction {
-                        gl::SRGB
-                    } else {
-                        gl::RGB
-                    };
+                    internal_format = if texture_config.gamma_correction { gl::SRGB } else { gl::RGB };
                     data_format = gl::RGB;
                 }
                 ColorType::Rgba8 => {
@@ -265,11 +281,7 @@ impl Texture {
 
             match texture_config.filter {
                 TextureFilter::Linear => {
-                    gl::TexParameteri(
-                        gl::TEXTURE_2D,
-                        gl::TEXTURE_MIN_FILTER,
-                        gl::LINEAR_MIPMAP_LINEAR as GLint,
-                    );
+                    gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR_MIPMAP_LINEAR as GLint);
                     gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as GLint);
                 }
                 TextureFilter::Nearest => {

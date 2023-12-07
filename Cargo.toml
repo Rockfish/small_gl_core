@@ -9,11 +9,13 @@ edition = "2021"
 glam = "0.24.2"
 image = "0.24.7"
 #russimp = "2.0.6"
-
 #russimp = { git = " https://github.com/jkvargas/russimp.git" }
 russimp = { path = "../russimp_glam" }
 log = "0.4.20"
 serde = { version = "1", features = ["derive"] }
+
+ahash = "0.8.3"
+hashbrown = { version = "0.14", features = ["serde"] }
 
 [dev-dependencies]
 glfw = "0.54.0"

@@ -9,22 +9,20 @@
 
 mod cube_object;
 
-use crate::cube_object::Cube;
 use glam::*;
 use glfw::{Action, Context, Key};
 use image::ColorType;
 use log::error;
-use small_gl_core::model_animation::ModelAnimation;
 use small_gl_core::animator::Animator;
-use small_gl_core::assimp_scene::AssimpScene;
 use small_gl_core::camera::{Camera, CameraMovement};
 use small_gl_core::gl;
 use small_gl_core::gl::{GLint, GLsizei, GLuint, GLvoid};
 use small_gl_core::model::{Model, ModelBuilder};
+use small_gl_core::model_animation::ModelAnimation;
 use small_gl_core::shader::Shader;
+use small_gl_core::texture::TextureType;
 use std::cell::RefCell;
 use std::rc::Rc;
-use small_gl_core::texture::TextureType;
 
 const SCR_WIDTH: f32 = 800.0;
 const SCR_HEIGHT: f32 = 800.0;
@@ -61,12 +59,7 @@ fn main() {
     glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
 
     let (mut window, events) = glfw
-        .create_window(
-            SCR_WIDTH as u32,
-            SCR_HEIGHT as u32,
-            "LearnOpenGL",
-            glfw::WindowMode::Windowed,
-        )
+        .create_window(SCR_WIDTH as u32, SCR_HEIGHT as u32, "LearnOpenGL", glfw::WindowMode::Windowed)
         .expect("Failed to create GLFW window.");
 
     // Turn on all GLFW polling so that we can receive all WindowEvents
@@ -203,9 +196,9 @@ fn main() {
         // animator.update_animation_sequence(55.0, 130.0, state.deltaTime); // Idle
         // animator.update_animation_sequence(134.0, 154.0, state.deltaTime); // Forward running
         // animator.update_animation_sequence(159.0, 179.0, state.deltaTime); // Backwards running
-        animator.update_animation_sequence(184.0, 204.0, state.deltaTime);  // Right running
-        // animator.update_animation_sequence(209.0, 229.0, state.deltaTime); // Left running
-        // animator.update_animation_sequence(234.0, 293.0, state.deltaTime); // Dying
+        animator.update_animation_sequence(184.0, 204.0, state.deltaTime); // Right running
+                                                                           // animator.update_animation_sequence(209.0, 229.0, state.deltaTime); // Left running
+                                                                           // animator.update_animation_sequence(234.0, 293.0, state.deltaTime); // Dying
 
         unsafe {
             // render
@@ -216,12 +209,7 @@ fn main() {
             shader.use_shader();
 
             // view/projection transformations
-            let projection = Mat4::perspective_rh_gl(
-                state.camera.zoom.to_radians(),
-                SCR_WIDTH / SCR_HEIGHT,
-                0.1,
-                1000.0,
-            );
+            let projection = Mat4::perspective_rh_gl(state.camera.zoom.to_radians(), SCR_WIDTH / SCR_HEIGHT, 0.1, 1000.0);
 
             let view = state.camera.get_view_matrix();
             shader.set_mat4("projection", &projection);
@@ -230,10 +218,7 @@ fn main() {
             let final_bones = animator.final_bone_matrices.borrow_mut();
 
             for (i, bone_transform) in final_bones.iter().enumerate() {
-                shader.set_mat4(
-                    format!("finalBonesMatrices[{}]", i).as_str(),
-                    &bone_transform,
-                );
+                shader.set_mat4(format!("finalBonesMatrices[{}]", i).as_str(), &bone_transform);
             }
 
             let mut model = Mat4::IDENTITY;
@@ -269,24 +254,16 @@ fn handle_window_event(window: &mut glfw::Window, event: glfw::WindowEvent, stat
             framebuffer_size_event(window, width, height);
         }
         glfw::WindowEvent::Key(Key::W, _, _, _) => {
-            state
-                .camera
-                .process_keyboard(CameraMovement::Forward, state.deltaTime);
+            state.camera.process_keyboard(CameraMovement::Forward, state.deltaTime);
         }
         glfw::WindowEvent::Key(Key::S, _, _, _) => {
-            state
-                .camera
-                .process_keyboard(CameraMovement::Backward, state.deltaTime);
+            state.camera.process_keyboard(CameraMovement::Backward, state.deltaTime);
         }
         glfw::WindowEvent::Key(Key::A, _, _, _) => {
-            state
-                .camera
-                .process_keyboard(CameraMovement::Left, state.deltaTime);
+            state.camera.process_keyboard(CameraMovement::Left, state.deltaTime);
         }
         glfw::WindowEvent::Key(Key::D, _, _, _) => {
-            state
-                .camera
-                .process_keyboard(CameraMovement::Right, state.deltaTime);
+            state.camera.process_keyboard(CameraMovement::Right, state.deltaTime);
         }
         glfw::WindowEvent::CursorPos(xpos, ypos) => mouse_handler(state, xpos, ypos),
         glfw::WindowEvent::Scroll(xoffset, ysoffset) => scroll_handler(state, xoffset, ysoffset),
@@ -388,11 +365,7 @@ fn loadTexture(path: &str) -> GLuint {
         gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::REPEAT as GLint);
         gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::REPEAT as GLint);
 
-        gl::TexParameteri(
-            gl::TEXTURE_2D,
-            gl::TEXTURE_MIN_FILTER,
-            gl::LINEAR_MIPMAP_LINEAR as GLint,
-        );
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR_MIPMAP_LINEAR as GLint);
         gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as GLint);
     }
 

@@ -1,11 +1,11 @@
-use crate::node_animation::{NodeAnimation, BoneData};
 use crate::model::{BoneName, Model};
+use crate::node_animation::{BoneData, NodeAnimation};
+use crate::utils::HashMap;
 use glam::Mat4;
 use russimp::animation::Animation;
 use russimp::node::Node;
 use russimp::scene::Scene;
 use std::cell::RefCell;
-use std::collections::HashMap;
 use std::rc::Rc;
 
 /// NodeData is local version of aiNode
@@ -65,7 +65,6 @@ impl Default for ModelAnimation {
 
 impl ModelAnimation {
     pub fn new(scene: &Scene, model: Rc<RefCell<Model>>) -> Self {
-
         if scene.animations.is_empty() {
             return ModelAnimation::default();
         }
@@ -91,7 +90,7 @@ impl ModelAnimation {
             root_node,
             node_animations: vec![].into(),
             bone_data_map: model.borrow().bone_data_map.clone(),
-            global_inverse_transform
+            global_inverse_transform,
         };
 
         model_animation.read_channel_node_animations(&scene.animations[0]);
@@ -100,7 +99,6 @@ impl ModelAnimation {
 
     /// Converts scene.aiNode tree to local NodeData tree. Converting all the transforms to column major form.
     fn read_hierarchy_data(source: &Rc<Node>) -> NodeData {
-
         let mut node_data = NodeData {
             name: source.name.clone(),
             //transformation: convert_to_mat4(&source.transformation),
@@ -127,4 +125,3 @@ impl ModelAnimation {
         }
     }
 }
-

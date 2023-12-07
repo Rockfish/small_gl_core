@@ -1,8 +1,8 @@
-use std::collections::HashMap;
 use crate::gl;
 use crate::gl::{GLsizei, GLsizeiptr, GLvoid};
 use crate::shader::Shader;
 use crate::texture::{Texture, TextureType};
+use crate::utils::HashMap;
 use glam::u32;
 use glam::*;
 use std::mem;
@@ -80,12 +80,7 @@ pub struct ModelMesh {
 }
 
 impl ModelMesh {
-    pub fn new(
-        name: impl Into<String>,
-        vertices: Vec<ModelVertex>,
-        indices: Vec<u32>,
-        textures: Vec<Rc<Texture>>,
-    ) -> ModelMesh {
+    pub fn new(name: impl Into<String>, vertices: Vec<ModelVertex>, indices: Vec<u32>, textures: Vec<Rc<Texture>>) -> ModelMesh {
         let mut mesh = ModelMesh {
             name: name.into(),
             vertices,
@@ -123,12 +118,10 @@ impl ModelMesh {
     //     }
     // }
     pub fn render(&self, shader: &Rc<Shader>) {
-
         let mut texture_count_map: HashMap<TextureType, u32> = HashMap::new();
 
         unsafe {
             for (texture_unit, texture) in self.textures.iter().enumerate() {
-
                 if !texture_count_map.contains_key(&texture.texture_type) {
                     texture_count_map.insert(texture.texture_type.clone(), 0);
                 }
@@ -136,10 +129,7 @@ impl ModelMesh {
                 let num = texture_count_map[&texture.texture_type] + 1;
                 *texture_count_map.get_mut(&texture.texture_type).unwrap() = num;
 
-                let texture_name = texture
-                    .texture_type
-                    .to_string()
-                    .add(&num.to_string());
+                let texture_name = texture.texture_type.to_string().add(&num.to_string());
 
                 shader.set_int(&texture_name, texture_unit as i32);
 
@@ -282,33 +272,15 @@ pub fn print_model_mesh(mesh: &ModelMesh) {
     println!("size vertex: {}", mem::size_of::<ModelVertex>());
     println!("OFFSET_OF_NORMAL: {}", mem::offset_of!(ModelVertex, normal));
     println!("OFFSET_OF_TEXCOORDS: {}", mem::offset_of!(ModelVertex, uv));
-    println!(
-        "OFFSET_OF_TANGENT: {}",
-        mem::offset_of!(ModelVertex, tangent)
-    );
-    println!(
-        "OFFSET_OF_BITANGENT: {}",
-        mem::offset_of!(ModelVertex, bi_tangent)
-    );
-    println!(
-        "OFFSET_OF_BONE_IDS: {}",
-        mem::offset_of!(ModelVertex, bone_ids)
-    );
-    println!(
-        "OFFSET_OF_WEIGHTS: {}",
-        mem::offset_of!(ModelVertex, bone_weights)
-    );
+    println!("OFFSET_OF_TANGENT: {}", mem::offset_of!(ModelVertex, tangent));
+    println!("OFFSET_OF_BITANGENT: {}", mem::offset_of!(ModelVertex, bi_tangent));
+    println!("OFFSET_OF_BONE_IDS: {}", mem::offset_of!(ModelVertex, bone_ids));
+    println!("OFFSET_OF_WEIGHTS: {}", mem::offset_of!(ModelVertex, bone_weights));
 
     println!("size of Vec3: {}", mem::size_of::<Vec3>());
     println!("size of Vec2: {}", mem::size_of::<Vec2>());
-    println!(
-        "size of [i32;4]: {}",
-        mem::size_of::<[i32; MAX_BONE_INFLUENCE]>()
-    );
-    println!(
-        "size of [f32;4]: {}",
-        mem::size_of::<[f32; MAX_BONE_INFLUENCE]>()
-    );
+    println!("size of [i32;4]: {}", mem::size_of::<[i32; MAX_BONE_INFLUENCE]>());
+    println!("size of [f32;4]: {}", mem::size_of::<[f32; MAX_BONE_INFLUENCE]>());
 
     println!(
         "size of vertex parts: {}",

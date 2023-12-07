@@ -1,6 +1,5 @@
-use russimp::animation::{QuatKey, VectorKey};
 use crate::node_animation::{KeyPosition, KeyRotation, KeyScale};
-
+use russimp::animation::{QuatKey, VectorKey};
 
 // Converts from row major matrix to column major matrix
 // pub fn convert_to_mat4(m: &Matrix4x4) -> Mat4 {

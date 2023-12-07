@@ -65,12 +65,7 @@ pub struct Mesh {
 }
 
 impl Mesh {
-    pub fn new(
-        vertices: Vec<Vertex>,
-        indices: Vec<u32>,
-        texture: &Rc<Texture>,
-        flip_to_xz: bool,
-    ) -> Mesh {
+    pub fn new(vertices: Vec<Vertex>, indices: Vec<u32>, texture: &Rc<Texture>, flip_to_xz: bool) -> Mesh {
         let mut vao: GLuint = 0;
         let mut vbo: GLuint = 0;
         let mut ebo: GLuint = 0;

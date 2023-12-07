@@ -27,7 +27,6 @@ impl Animator {
     }
 
     pub fn update_animation(&mut self, delta_time: f32) {
-
         self.delta_time = delta_time;
 
         if self.current_time < 0.0 {
@@ -49,7 +48,6 @@ impl Animator {
     }
 
     pub fn update_animation_sequence(&mut self, offset: f32, duration: f32, delta_time: f32) {
-
         self.delta_time = delta_time;
 
         if self.current_time < 0.0 {
@@ -74,7 +72,6 @@ impl Animator {
     }
 
     pub fn calculate_bone_transforms(&self, node_data: &NodeData, parent_transform: Mat4) {
-
         let global_transformation = self.calculate_transform(node_data, parent_transform);
 
         for child in node_data.children.iter() {
@@ -89,7 +86,6 @@ impl Animator {
     // Then do a weighted merge maps
     // and when doing the merge calculate and store the final_bone transforms, and store the mesh transforms, for the shader to apply
     fn calculate_transform(&self, node_data: &NodeData, parent_transform: Mat4) -> Mat4 {
-
         let current_animation = self.current_animation.borrow();
         let bone_data_map = current_animation.bone_data_map.borrow();
         let mut node_animations = current_animation.node_animations.borrow_mut();
@@ -110,7 +106,8 @@ impl Animator {
         }
 
         for mesh_index in node_data.meshes.iter() {
-            self.current_animation.borrow().model.borrow_mut().meshes.borrow_mut()[*mesh_index as usize].node_transform = global_transformation;
+            self.current_animation.borrow().model.borrow_mut().meshes.borrow_mut()[*mesh_index as usize].node_transform =
+                global_transformation;
         }
 
         global_transformation

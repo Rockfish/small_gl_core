@@ -12,15 +12,16 @@ pub mod mesh;
 
 pub mod model;
 
-pub mod model_animation;
 pub mod animator;
-pub mod node_animation;
+mod assimp_dump;
+mod assimp_utils;
+pub mod model_animation;
 pub mod model_mesh;
+pub mod node_animation;
 pub mod shader;
 pub mod sprite_model;
 pub mod texture;
-mod assimp_dump;
-mod assimp_utils;
+pub mod utils;
 
 type ShaderId = u32;
 

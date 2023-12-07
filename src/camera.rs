@@ -58,12 +58,7 @@ impl Camera {
         camera
     }
 
-    pub fn camera_vec3_up_yaw_pitch(
-        position: Vec3,
-        world_up: Vec3,
-        yaw: f32,
-        pitch: f32,
-    ) -> Camera {
+    pub fn camera_vec3_up_yaw_pitch(position: Vec3, world_up: Vec3, yaw: f32, pitch: f32) -> Camera {
         let mut camera = Camera::new();
         camera.position = position;
         camera.world_up = world_up;
@@ -74,16 +69,7 @@ impl Camera {
     }
 
     #[allow(clippy::too_many_arguments)]
-    pub fn camera_scalar(
-        pos_x: f32,
-        pos_y: f32,
-        pos_z: f32,
-        up_x: f32,
-        up_y: f32,
-        up_z: f32,
-        yaw: f32,
-        pitch: f32,
-    ) -> Camera {
+    pub fn camera_scalar(pos_x: f32, pos_y: f32, pos_z: f32, up_x: f32, up_y: f32, up_z: f32, yaw: f32, pitch: f32) -> Camera {
         let mut camera = Camera::new();
         camera.position = vec3(pos_x, pos_y, pos_z);
         camera.world_up = vec3(up_x, up_y, up_z);
@@ -117,12 +103,7 @@ impl Camera {
     }
 
     // processes input received from a mouse input system. Expects the offset value in both the x and y direction.
-    pub fn process_mouse_movement(
-        &mut self,
-        mut xoffset: f32,
-        mut yoffset: f32,
-        constrain_pitch: bool,
-    ) {
+    pub fn process_mouse_movement(&mut self, mut xoffset: f32, mut yoffset: f32, constrain_pitch: bool) {
         xoffset *= self.mouse_sensitivity;
         yoffset *= self.mouse_sensitivity;
 

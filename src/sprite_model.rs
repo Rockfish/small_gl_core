@@ -38,12 +38,7 @@ pub struct SpriteModel {
 }
 
 impl SpriteModel {
-    pub fn new(
-        name: &Rc<str>,
-        shader: &Rc<Shader>,
-        mesh: &Rc<Mesh>,
-        sprite_data: SpriteData,
-    ) -> Self {
+    pub fn new(name: &Rc<str>, shader: &Rc<Shader>, mesh: &Rc<Mesh>, sprite_data: SpriteData) -> Self {
         SpriteModel {
             name: name.clone(),
             shader: shader.clone(),
@@ -68,13 +63,8 @@ impl SpriteModel {
             ),
         );
 
-        self.shader.set_vec2(
-            "tex_size",
-            &vec2(
-                self.sprite_data.texture_width,
-                self.sprite_data.texture_height,
-            ),
-        );
+        self.shader
+            .set_vec2("tex_size", &vec2(self.sprite_data.texture_width, self.sprite_data.texture_height));
 
         self.mesh.render(&self.shader, position, angle, scale);
     }

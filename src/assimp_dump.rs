@@ -1,9 +1,6 @@
-use std::ptr::slice_from_raw_parts;
 use russimp::animation::Animation;
 use russimp::sys::aiScene;
-use crate::assimp_scene::AssimpScene;
-use crate::error::Error::SceneError;
-use crate::error::Error;
+use std::ptr::slice_from_raw_parts;
 
 // fn load_model(scene: &AssimpScene) -> Result<(), Error> {
 //     let option_ai_scene = unsafe { scene.assimp_scene.as_ref() };
@@ -17,10 +14,6 @@ use crate::error::Error;
 //     Ok(())
 // }
 //
-
-
-
-
 
 fn walk_animation_nodes(scene: &aiScene) {
     let slice = slice_from_raw_parts(scene.mAnimations, scene.mNumAnimations as usize);

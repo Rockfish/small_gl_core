@@ -1,22 +1,19 @@
-use crate::node_animation::BoneData;
 use crate::error::Error;
 use crate::error::Error::{MeshError, SceneError};
 use crate::model_mesh::{ModelMesh, ModelVertex};
+use crate::node_animation::BoneData;
 use crate::shader::Shader;
-use crate::texture::{
-    Texture, TextureConfig, TextureFilter, TextureType, TextureWrap,
-};
+use crate::texture::{Texture, TextureConfig, TextureFilter, TextureType, TextureWrap};
+use crate::utils::HashMap;
 use glam::*;
+use russimp::node::Node;
+use russimp::scene::{PostProcess, Scene};
 use russimp::sys::*;
 use std::cell::RefCell;
-use std::collections::HashMap;
 use std::os::raw::c_uint;
 use std::path::PathBuf;
 use std::ptr::*;
 use std::rc::Rc;
-// use russimp::mesh::Mesh;
-use russimp::node::Node;
-use russimp::scene::{PostProcess, Scene};// use crate::assimp_utils::convert_to_mat4;
 
 pub type BoneName = String;
 
@@ -188,19 +185,20 @@ impl ModelBuilder {
     }
 
     pub fn load_russimp_scene(file_path: &str) -> Result<Scene, Error> {
-        let scene = Scene::from_file(
-            file_path,
-            vec![
-                PostProcess::Triangulate,
-                PostProcess::GenerateSmoothNormals,
-                PostProcess::FlipUVs,
-                PostProcess::CalculateTangentSpace,
-                PostProcess::FixOrRemoveInvalidData,
-                // PostProcess::JoinIdenticalVertices,
-                // PostProcess::SortByPrimitiveType,
-                // PostProcess::EmbedTextures,
-            ],
-        )?;
+        let scene =
+            Scene::from_file(
+                file_path,
+                vec![
+                    PostProcess::Triangulate,
+                    PostProcess::GenerateSmoothNormals,
+                    PostProcess::FlipUVs,
+                    PostProcess::CalculateTangentSpace,
+                    PostProcess::FixOrRemoveInvalidData,
+                    // PostProcess::JoinIdenticalVertices,
+                    // PostProcess::SortByPrimitiveType,
+                    // PostProcess::EmbedTextures,
+                ],
+            )?;
         Ok(scene)
     }
 
@@ -208,15 +206,12 @@ impl ModelBuilder {
     fn load_model(&mut self, scene: &Scene) -> Result<(), Error> {
         match &scene.root {
             None => Err(SceneError("Error getting scene root node".to_string())),
-            Some(root_node) => {
-                self.process_node(root_node, scene)
-            }
+            Some(root_node) => self.process_node(root_node, scene),
         }
     }
 
     #[allow(clippy::needless_range_loop)]
     fn process_node(&mut self, node: &Rc<Node>, scene: &Scene) -> Result<(), Error> {
-
         for mesh_id in &node.meshes {
             let scene_mesh = &scene.meshes[*mesh_id as usize];
             let mesh = self.process_mesh(scene_mesh, scene);
@@ -231,19 +226,13 @@ impl ModelBuilder {
     }
 
     #[allow(clippy::needless_range_loop)]
-    fn process_mesh(
-        &mut self,
-        r_mesh: &russimp::mesh::Mesh,
-        scene: &Scene,
-    ) -> Result<ModelMesh, Error> {
-
+    fn process_mesh(&mut self, r_mesh: &russimp::mesh::Mesh, scene: &Scene) -> Result<ModelMesh, Error> {
         let mut vertices: Vec<ModelVertex> = vec![];
         let mut indices: Vec<u32> = vec![];
         let mut textures: Vec<Rc<Texture>> = vec![];
 
         // a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't
         // use models where a vertex can have multiple texture coordinates so we always take the first set (0).
-
 
         // let texture_coords = if !ai_mesh.mTextureCoords.is_empty() {
         //     get_vec_from_parts(ai_mesh.mTextureCoords[0], vertex_vec.len() as u32)
@@ -273,7 +262,7 @@ impl ModelBuilder {
         }
 
         for face in &r_mesh.faces {
-           indices.extend(&face.0)
+            indices.extend(&face.0)
         }
 
         let material = &scene.materials[r_mesh.material_index as usize];
@@ -317,12 +306,7 @@ impl ModelBuilder {
         Ok(mesh)
     }
 
-    fn extract_bone_weights_for_vertices(
-        &mut self,
-        vertices: &mut Vec<ModelVertex>,
-        r_mesh: &russimp::mesh::Mesh,
-    ) {
-
+    fn extract_bone_weights_for_vertices(&mut self, vertices: &mut Vec<ModelVertex>, r_mesh: &russimp::mesh::Mesh) {
         let mut bone_data_map = self.bone_data_map.borrow_mut();
 
         for bone in &r_mesh.bones {
@@ -415,7 +399,7 @@ impl ModelBuilder {
     fn add_bones(&mut self, mesh_name: &String, vertices: &mut Vec<ModelVertex>) -> Result<(), Error> {
         for added_bone in &self.added_bones {
             if added_bone.mesh_name == *mesh_name {
-                let bone_map =  self.bone_data_map.borrow();
+                let bone_map = self.bone_data_map.borrow();
                 let option_bone_data = bone_map.get(&added_bone.bone_name);
                 if let Some(bone_data) = option_bone_data {
                     for vertex in vertices.iter_mut() {
@@ -433,13 +417,9 @@ impl ModelBuilder {
     fn load_texture(&self, texture_type: &TextureType, texture_filename: &str) -> Result<Rc<Texture>, Error> {
         let full_path = self.directory.join(&texture_filename);
 
-        let mut texture_cache = self
-            .textures_cache
-            .borrow_mut();
+        let mut texture_cache = self.textures_cache.borrow_mut();
 
-        let cached_texture = texture_cache
-            .iter()
-            .find(|t| t.texture_path == full_path.clone().into_os_string());
+        let cached_texture = texture_cache.iter().find(|t| t.texture_path == full_path.clone().into_os_string());
 
         match cached_texture {
             None => {
@@ -459,9 +439,7 @@ impl ModelBuilder {
                 texture_cache.push(texture.clone());
                 Ok(texture)
             }
-            Some(texture) => {
-                Ok(texture.clone())
-            }
+            Some(texture) => Ok(texture.clone()),
         }
     }
 }
@@ -473,8 +451,5 @@ pub fn get_vec_from_parts(raw_data: *mut aiVector3D, size: c_uint) -> Vec<Vec3> 
     }
 
     let raw_array = unsafe { slice.as_ref() }.unwrap();
-    raw_array
-        .iter()
-        .map(|aiv| vec3(aiv.x, aiv.y, aiv.z))
-        .collect()
+    raw_array.iter().map(|aiv| vec3(aiv.x, aiv.y, aiv.z)).collect()
 }
