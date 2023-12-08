@@ -22,6 +22,7 @@ use small_gl_core::model_animation::ModelAnimation;
 use small_gl_core::shader::Shader;
 use small_gl_core::texture::TextureType;
 use std::cell::RefCell;
+use std::process::id;
 use std::rc::Rc;
 
 const SCR_WIDTH: f32 = 800.0;
@@ -173,7 +174,8 @@ fn main() {
     let dance_animation = Rc::new(RefCell::new(ModelAnimation::new(&scene, dancing_model.clone())));
     let mut animator = Animator::new(&dance_animation);
 
-    animator.play_clip(&forward);
+    animator.play_clip(&idle);
+
 
     // Lighting
     let lightDir: Vec3 = vec3(-0.8, 0.0, -1.0).normalize_or_zero();

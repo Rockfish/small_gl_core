@@ -42,7 +42,7 @@ impl Cube {
             .unwrap(),
         );
 
-        ModelMesh::new("cube", vertices, indices, vec![texture])
+        ModelMesh::new(0, "cube", vertices, indices, vec![texture])
     }
 
     fn data() -> (Vec<ModelVertex>, Vec<u32>) {

@@ -18,6 +18,7 @@ pub mod shader;
 pub mod sprite_model;
 pub mod texture;
 pub mod utils;
+mod transform;
 
 type ShaderId = u32;
 

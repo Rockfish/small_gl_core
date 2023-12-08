@@ -14,6 +14,7 @@ use std::os::raw::c_uint;
 use std::path::PathBuf;
 use std::ptr::*;
 use std::rc::Rc;
+use crate::transform::Transform;
 
 pub type BoneName = String;
 
@@ -95,6 +96,7 @@ pub struct ModelBuilder {
     pub textures_cache: RefCell<Vec<Rc<Texture>>>,
     pub added_textures: Vec<AddedTextures>,
     pub added_bones: Vec<AddedBone>,
+    pub mesh_count: i32,
 }
 
 impl ModelBuilder {
@@ -115,6 +117,7 @@ impl ModelBuilder {
             flip_v: false,
             added_textures: vec![],
             added_bones: vec![],
+            mesh_count: 0,
         }
     }
 
@@ -302,7 +305,8 @@ impl ModelBuilder {
 
         self.add_bones(&r_mesh.name, &mut vertices)?;
 
-        let mesh = ModelMesh::new(&r_mesh.name, vertices, indices, textures);
+        let mesh = ModelMesh::new(self.mesh_count, &r_mesh.name, vertices, indices, textures);
+        self.mesh_count += 1;
         Ok(mesh)
     }
 
@@ -320,6 +324,7 @@ impl ModelBuilder {
                         bone_index: self.bone_count,
                         // offset: convert_to_mat4(&bone.offset_matrix),
                         offset: bone.offset_matrix.clone(),
+                        offset_transform: Transform::from_matrix(bone.offset_matrix.clone()),
                     };
                     bone_data_map.insert(bone.name.clone(), bone_info);
                     bone_id = self.bone_count;

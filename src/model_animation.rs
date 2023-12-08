@@ -7,12 +7,14 @@ use russimp::node::Node;
 use russimp::scene::Scene;
 use std::cell::RefCell;
 use std::rc::Rc;
+use crate::transform::Transform;
 
 /// NodeData is local version of aiNode
 #[derive(Debug)]
 pub struct NodeData {
     pub name: String,
-    pub transformation: Mat4,
+    pub transform_matrix: Mat4,
+    pub transform: Transform,
     pub children: Vec<NodeData>,
     pub meshes: Vec<u32>,
 }
@@ -21,7 +23,8 @@ impl NodeData {
     pub fn new() -> Self {
         NodeData {
             name: String::new(),
-            transformation: Mat4::IDENTITY,
+            transform_matrix: Mat4::IDENTITY,
+            transform: Transform::IDENTITY,
             children: vec![],
             meshes: vec![],
         }
@@ -32,7 +35,8 @@ impl Default for NodeData {
     fn default() -> Self {
         NodeData {
             name: String::new(),
-            transformation: Mat4::IDENTITY,
+            transform_matrix: Mat4::IDENTITY,
+            transform: Transform::IDENTITY,
             children: vec![],
             meshes: vec![],
         }
@@ -102,7 +106,8 @@ impl ModelAnimation {
         let mut node_data = NodeData {
             name: source.name.clone(),
             //transformation: convert_to_mat4(&source.transformation),
-            transformation: source.transformation.clone(),
+            transform_matrix: source.transformation.clone(),
+            transform: Transform::from_matrix(source.transformation.clone()),
             children: vec![],
             meshes: source.meshes.clone(),
         };

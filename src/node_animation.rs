@@ -1,5 +1,6 @@
 use glam::{Mat4, Quat, Vec3};
 use russimp::animation::NodeAnim;
+use crate::transform::Transform;
 
 #[derive(Debug, Clone)]
 pub struct KeyPosition {
@@ -34,6 +35,7 @@ pub struct BoneData {
     pub name: String,
     pub bone_index: i32, // index connecting mesh bone_id array to transform in shader final_transform array
     pub offset: Mat4,    // offset from bone's parent
+    pub offset_transform: Transform,
 }
 
 impl BoneData {
@@ -41,7 +43,8 @@ impl BoneData {
         BoneData {
             name: name.into(),
             bone_index: id,
-            offset,
+            offset: offset.clone(),
+            offset_transform: Transform::from_matrix(offset),
         }
     }
 }
@@ -65,16 +68,24 @@ impl NodeAnimation {
         }
     }
 
-    pub fn get_animation_transform(&self, animation_time: f32) -> Mat4 {
-        let translation = self.interpolate_position(animation_time);
-        let rotation = self.interpolate_rotation(animation_time);
-        let scale = self.interpolate_scaling(animation_time);
+    pub fn get_animation_transform_matrix(&self, animation_time: f32) -> Mat4 {
+        let translation = Mat4::from_translation(self.interpolate_position(animation_time));
+        let rotation = Mat4::from_quat(self.interpolate_rotation(animation_time));
+        let scale = Mat4::from_scale(self.interpolate_scaling(animation_time));
         translation * rotation * scale
     }
 
-    fn interpolate_position(&self, animation_time: f32) -> Mat4 {
+    pub fn get_animation_transform(&self, animation_time: f32) -> Transform {
+        Transform {
+            translation: self.interpolate_position(animation_time),
+            rotation: self.interpolate_rotation(animation_time),
+            scale: self.interpolate_scaling(animation_time),
+        }
+    }
+
+    fn interpolate_position(&self, animation_time: f32) -> Vec3 {
         if self.positions.len() == 1 {
-            return Mat4::from_translation(self.positions[0].position);
+            return self.positions[0].position;
         }
 
         let p0_index = self.get_position_index(animation_time);
@@ -90,13 +101,13 @@ impl NodeAnimation {
             .position
             .lerp(self.positions[p1_index].position, scale_factor);
 
-        Mat4::from_translation(final_position)
+        final_position
     }
 
-    fn interpolate_rotation(&self, animation_time: f32) -> Mat4 {
+    fn interpolate_rotation(&self, animation_time: f32) -> Quat {
         if self.rotations.len() == 1 {
             let rotation = self.rotations[0].orientation.normalize();
-            return Mat4::from_quat(rotation);
+            return rotation;
         }
 
         let p0_index = self.get_rotation_index(animation_time);
@@ -112,12 +123,12 @@ impl NodeAnimation {
             .orientation
             .slerp(self.rotations[p1_index].orientation, scale_factor);
 
-        Mat4::from_quat(final_rotation)
+        final_rotation
     }
 
-    fn interpolate_scaling(&self, animation_time: f32) -> Mat4 {
+    fn interpolate_scaling(&self, animation_time: f32) -> Vec3 {
         if self.scales.len() == 1 {
-            return Mat4::from_scale(self.scales[0].scale);
+            return self.scales[0].scale;
         }
 
         let p0_index = self.get_scale_index(animation_time);
@@ -127,7 +138,7 @@ impl NodeAnimation {
 
         let final_scale = self.scales[p0_index].scale.lerp(self.scales[p1_index].scale, scale_factor);
 
-        Mat4::from_scale(final_scale)
+        final_scale
     }
 
     fn get_position_index(&self, animation_time: f32) -> usize {

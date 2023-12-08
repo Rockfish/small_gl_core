@@ -69,6 +69,7 @@ impl Default for ModelVertex {
 
 #[derive(Debug, Clone)]
 pub struct ModelMesh {
+    pub id: i32,
     pub name: String,
     pub vertices: Vec<ModelVertex>,
     pub indices: Vec<u32>,
@@ -80,8 +81,9 @@ pub struct ModelMesh {
 }
 
 impl ModelMesh {
-    pub fn new(name: impl Into<String>, vertices: Vec<ModelVertex>, indices: Vec<u32>, textures: Vec<Rc<Texture>>) -> ModelMesh {
+    pub fn new(id: i32, name: impl Into<String>, vertices: Vec<ModelVertex>, indices: Vec<u32>, textures: Vec<Rc<Texture>>) -> ModelMesh {
         let mut mesh = ModelMesh {
+            id,
             name: name.into(),
             vertices,
             indices,
@@ -137,7 +139,9 @@ impl ModelMesh {
                 gl::BindTexture(gl::TEXTURE_2D, texture.id);
             }
 
+            shader.set_int("mesh_id", self.id);
             shader.set_mat4("nodeTransform", &self.node_transform);
+            // shader.set_mat4("nodeTransform", &Mat4::IDENTITY);
 
             gl::BindVertexArray(self.vao);
             gl::DrawElements(
