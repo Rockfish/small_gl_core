@@ -24,6 +24,7 @@ use small_gl_core::texture::TextureType;
 use std::cell::RefCell;
 use std::process::id;
 use std::rc::Rc;
+use std::time::Duration;
 
 const SCR_WIDTH: f32 = 800.0;
 const SCR_HEIGHT: f32 = 800.0;
@@ -127,14 +128,46 @@ fn main() {
     let scene = ModelBuilder::load_russimp_scene(model_path).unwrap();
 
     let dancing_model = ModelBuilder::new("model", shader.clone(), model_path)
-        .add_texture("Player", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Player_D.tga") // Player model
-        .add_texture("Player", TextureType::Specular, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Player_M.tga") // Player model
-        .add_texture("Player", TextureType::Emissive, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Player_E.tga") // Player model
-        .add_texture("Player", TextureType::Normals, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Player_NRM.tga") // Player model
-        .add_texture("Gun", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Gun_D.tga") // Player model
-        .add_texture("Gun", TextureType::Specular, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Gun_M.tga") // Player model
-        .add_texture("Gun", TextureType::Emissive, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Gun_E.tga") // Player model
-        .add_texture("Gun", TextureType::Normals, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Gun_NRM.tga") // Player model
+        .add_texture(
+            "Player",
+            TextureType::Diffuse,
+            "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Player_D.tga",
+        ) // Player model
+        .add_texture(
+            "Player",
+            TextureType::Specular,
+            "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Player_M.tga",
+        ) // Player model
+        .add_texture(
+            "Player",
+            TextureType::Emissive,
+            "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Player_E.tga",
+        ) // Player model
+        .add_texture(
+            "Player",
+            TextureType::Normals,
+            "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Player_NRM.tga",
+        ) // Player model
+        .add_texture(
+            "Gun",
+            TextureType::Diffuse,
+            "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Gun_D.tga",
+        ) // Player model
+        .add_texture(
+            "Gun",
+            TextureType::Specular,
+            "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Gun_M.tga",
+        ) // Player model
+        .add_texture(
+            "Gun",
+            TextureType::Emissive,
+            "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Gun_E.tga",
+        ) // Player model
+        .add_texture(
+            "Gun",
+            TextureType::Normals,
+            "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Gun_NRM.tga",
+        ) // Player model
         // .add_texture("characterMedium", TextureType::Diffuse, "/Users/john/Dev_Assets/animated-characters-3/Skins/humanFemaleA.png")  // characterMedium model
         // .add_texture("Box016", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/small_gl_core/examples/sample_animation/container2.png") // capoeira
         // .add_texture("Box009", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/small_gl_core/examples/sample_animation/container2.png") // capoeira
@@ -174,8 +207,14 @@ fn main() {
     let dance_animation = Rc::new(RefCell::new(ModelAnimation::new(&scene, dancing_model.clone())));
     let mut animator = Animator::new(&dance_animation);
 
-    animator.play_clip(&idle);
-
+    animator.play_clip(&right);
+    animator.play_clip_with_transition(&idle, Duration::from_secs(6));
+    // animator.play_clip_with_transition(&forward, Duration::from_secs(6));
+    // animator.play_clip_with_transition(&right, Duration::from_secs(6));
+    // animator.play_clip_with_transition(&left, Duration::from_secs(3));
+    // animator.play_clip_with_transition(&backwards, Duration::from_secs(3));
+    // animator.play_clip_with_transition(&dying, Duration::from_secs(3));
+    // animator.play_clip_with_transition(&left, Duration::from_secs(10));
 
     // Lighting
     let lightDir: Vec3 = vec3(-0.8, 0.0, -1.0).normalize_or_zero();
@@ -207,10 +246,6 @@ fn main() {
         // animator.update_animation(0.01);
 
         // animation - duration: 294   ticks_per_second: 30
-
-
-
-
 
         animator.update_animation(state.deltaTime);
 

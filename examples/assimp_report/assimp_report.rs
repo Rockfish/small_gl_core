@@ -4,9 +4,9 @@ use russimp::bone::Bone;
 use russimp::mesh::Mesh;
 use russimp::node::Node;
 use russimp::scene::Scene;
+use small_gl_core::model::ModelBuilder;
 use small_gl_core::utils::HashMap;
 use std::rc::Rc;
-use small_gl_core::model::ModelBuilder;
 
 fn main() {
     let model_path = "examples/sample_animation/animated_cube/AnimatedCube.gltf";

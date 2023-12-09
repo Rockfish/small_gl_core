@@ -4,6 +4,7 @@ use crate::model_mesh::{ModelMesh, ModelVertex};
 use crate::node_animation::BoneData;
 use crate::shader::Shader;
 use crate::texture::{Texture, TextureConfig, TextureFilter, TextureType, TextureWrap};
+use crate::transform::Transform;
 use crate::utils::HashMap;
 use glam::*;
 use russimp::node::Node;
@@ -14,7 +15,6 @@ use std::os::raw::c_uint;
 use std::path::PathBuf;
 use std::ptr::*;
 use std::rc::Rc;
-use crate::transform::Transform;
 
 pub type BoneName = String;
 

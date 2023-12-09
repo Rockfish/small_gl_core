@@ -1,6 +1,6 @@
+use crate::transform::Transform;
 use glam::{Mat4, Quat, Vec3};
 use russimp::animation::NodeAnim;
-use crate::transform::Transform;
 
 #[derive(Debug, Clone)]
 pub struct KeyPosition {

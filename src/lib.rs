@@ -17,8 +17,8 @@ pub mod node_animation;
 pub mod shader;
 pub mod sprite_model;
 pub mod texture;
-pub mod utils;
 mod transform;
+pub mod utils;
 
 type ShaderId = u32;
 

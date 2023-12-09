@@ -1,5 +1,6 @@
 use crate::model::{BoneName, Model};
 use crate::node_animation::{BoneData, NodeAnimation};
+use crate::transform::Transform;
 use crate::utils::HashMap;
 use glam::Mat4;
 use russimp::animation::Animation;
@@ -7,7 +8,6 @@ use russimp::node::Node;
 use russimp::scene::Scene;
 use std::cell::RefCell;
 use std::rc::Rc;
-use crate::transform::Transform;
 
 /// NodeData is local version of aiNode
 #[derive(Debug)]
