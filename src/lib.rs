@@ -5,7 +5,6 @@ pub mod gl;
 
 pub mod animator;
 pub mod assimp_dump;
-pub mod assimp_utils;
 pub mod camera;
 pub mod error;
 pub mod macros;
@@ -17,7 +16,7 @@ pub mod node_animation;
 pub mod shader;
 pub mod sprite_model;
 pub mod texture;
-mod transform;
+pub mod transform;
 pub mod utils;
 
 type ShaderId = u32;

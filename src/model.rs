@@ -1,7 +1,7 @@
 use crate::error::Error;
 use crate::error::Error::{MeshError, SceneError};
+use crate::model_animation::BoneData;
 use crate::model_mesh::{ModelMesh, ModelVertex};
-use crate::node_animation::BoneData;
 use crate::shader::Shader;
 use crate::texture::{Texture, TextureConfig, TextureFilter, TextureType, TextureWrap};
 use crate::transform::Transform;
@@ -27,7 +27,6 @@ pub struct Model {
     pub meshes: Rc<RefCell<Vec<ModelMesh>>>,
     pub bone_data_map: Rc<RefCell<HashMap<BoneName, BoneData>>>,
     pub bone_count: i32,
-    // pub animations: Rc<Vec<Animation>>,
 }
 
 impl Default for Model {
@@ -88,7 +87,6 @@ pub struct ModelBuilder {
     pub meshes: Vec<ModelMesh>,
     pub bone_data_map: Rc<RefCell<HashMap<String, BoneData>>>,
     pub bone_count: i32,
-    // pub animations: Vec<Animation>,
     pub filepath: String,
     pub directory: PathBuf,
     pub gamma_correction: bool,
@@ -110,7 +108,6 @@ impl ModelBuilder {
             meshes: vec![],
             bone_data_map: Rc::new(RefCell::new(HashMap::new())),
             bone_count: 0,
-            // animations: vec![],
             filepath,
             directory,
             gamma_correction: false,
@@ -164,7 +161,6 @@ impl ModelBuilder {
             meshes: Rc::from(RefCell::new(self.meshes)),
             bone_data_map: self.bone_data_map,
             bone_count: self.bone_count,
-            // animations: Rc::from(self.animations),
         };
 
         Ok(model)
@@ -181,7 +177,6 @@ impl ModelBuilder {
             meshes: Rc::from(RefCell::new(self.meshes)),
             bone_data_map: self.bone_data_map,
             bone_count: self.bone_count,
-            // animations: Rc::from(self.animations),
         };
 
         Ok(model)
@@ -234,15 +229,6 @@ impl ModelBuilder {
         let mut indices: Vec<u32> = vec![];
         let mut textures: Vec<Rc<Texture>> = vec![];
 
-        // a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't
-        // use models where a vertex can have multiple texture coordinates so we always take the first set (0).
-
-        // let texture_coords = if !ai_mesh.mTextureCoords.is_empty() {
-        //     get_vec_from_parts(ai_mesh.mTextureCoords[0], vertex_vec.len() as u32)
-        // } else {
-        //     vec![]
-        // };
-
         for i in 0..r_mesh.vertices.len() {
             let mut vertex = ModelVertex::new();
 
@@ -270,29 +256,6 @@ impl ModelBuilder {
 
         let material = &scene.materials[r_mesh.material_index as usize];
 
-        // we assume a convention for sampler names in the shaders. Each diffuse texture should be named
-        // as 'texture_diffuseN' where N is a sequential number ranging from 1 to MAX_SAMPLER_NUMBER.
-        // Same applies to other texture as the following list summarizes:
-        // diffuse: texture_diffuseN
-        // specular: texture_specularN
-        // normal: texture_normalN
-
-        // // 1. diffuse maps
-        // let diffuse_textures = self.load_material_textures(material, TextureType::Diffuse)?;
-        // textures.extend(diffuse_textures);
-        //
-        // // 2. specular maps
-        // let specular_textures = self.load_material_textures(material, TextureType::Specular)?;
-        // textures.extend(specular_textures);
-        //
-        // // 3. normal maps
-        // let normal_textures = self.load_material_textures(material, TextureType::Normals)?;
-        // textures.extend(normal_textures);
-        //
-        // // 4. height maps
-        // let height_maps = self.load_material_textures(material, TextureType::Height)?;
-        // textures.extend(height_maps);
-
         for (r_texture_type, r_texture) in material.textures.iter() {
             let texture_type = TextureType::convert_from(r_texture_type);
             let texture = self.load_texture(&texture_type, r_texture.borrow().filename.as_str())?;
@@ -318,12 +281,9 @@ impl ModelBuilder {
 
             match bone_data_map.get(&bone.name) {
                 None => {
-                    // let other_offset = convert_matrix(&bone.offset_matrix);
                     let bone_info = BoneData {
-                        name: bone.name.clone(),
+                        name: Rc::from(bone.name.as_str()),
                         bone_index: self.bone_count,
-                        // offset: convert_to_mat4(&bone.offset_matrix),
-                        offset: bone.offset_matrix.clone(),
                         offset_transform: Transform::from_matrix(bone.offset_matrix.clone()),
                     };
                     bone_data_map.insert(bone.name.clone(), bone_info);
@@ -336,7 +296,6 @@ impl ModelBuilder {
                 }
             }
 
-            // let mut last_bone_id = -1;
             for bone_weight in &bone.weights {
                 let vertex_id = bone_weight.vertex_id as usize;
                 let weight = bone_weight.weight;
@@ -344,46 +303,9 @@ impl ModelBuilder {
                 assert!(vertex_id <= vertices.len());
 
                 vertices[vertex_id].set_bone_data(bone_id, weight);
-
-                // debug
-                // if bone_id != last_bone_id {
-                //     println!("vertex_id: {}  bone_id: {}  weight: {}", vertex_id, bone_id, weight);
-                //     last_bone_id = bone_id;
-                // }
             }
         }
     }
-
-    // fn load_material_textures(
-    //     &mut self,
-    //     r_material: russimp::material::Material,
-    //     texture_type: TextureType,
-    // ) -> Result<Vec<Rc<Texture>>, Error> {
-    //     let mut textures: Vec<Rc<Texture>> = vec![];
-    //
-    //     for (r_texture_type, r_texture) in r_material.textures.iter() {
-    //         let texture_type = TextureType::convert_from(r_texture_type);
-    //         let texture = self.load_texture(texture_type, r_texture.borrow().filename.as_str())?;
-    //         textures.push(texture);
-    //     }
-    //
-    //
-    //     if let Some(textures) = option_texture_vec {
-    //         for texture in textures.bo
-    //     }
-    //
-    //
-    //     let texture_count = unsafe { aiGetMaterialTextureCount(assimp_material, texture_type.into()) };
-    //
-    //     for i in 0..texture_count {
-    //         let texture_filename =
-    //             unsafe { get_material_texture_filename(assimp_material, texture_type, i)? };
-    //
-    //         let texture = self.load_texture(texture_type, texture_filename.as_str())?;
-    //         textures.push(texture);
-    //     }
-    //     Ok(textures)
-    // }
 
     fn add_textures(&mut self) -> Result<(), Error> {
         for added_texture in &self.added_textures {

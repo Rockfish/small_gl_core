@@ -1,6 +1,7 @@
 use crate::transform::Transform;
-use glam::{Mat4, Quat, Vec3};
-use russimp::animation::NodeAnim;
+use glam::{Quat, Vec3};
+use russimp::animation::{NodeAnim, QuatKey, VectorKey};
+use std::rc::Rc;
 
 #[derive(Debug, Clone)]
 pub struct KeyPosition {
@@ -22,7 +23,7 @@ pub struct KeyScale {
 
 #[derive(Debug, Clone)]
 pub struct NodeAnimation {
-    pub name: String,
+    pub name: Rc<str>,
     pub positions: Vec<KeyPosition>,
     pub rotations: Vec<KeyRotation>,
     pub scales: Vec<KeyScale>,
@@ -30,31 +31,10 @@ pub struct NodeAnimation {
     // pub pre_state: u32,
 }
 
-#[derive(Debug, Clone)]
-pub struct BoneData {
-    pub name: String,
-    pub bone_index: i32, // index connecting mesh bone_id array to transform in shader final_transform array
-    pub offset: Mat4,    // offset from bone's parent
-    pub offset_transform: Transform,
-}
-
-impl BoneData {
-    pub fn new(name: impl Into<String>, id: i32, offset: Mat4) -> Self {
-        BoneData {
-            name: name.into(),
-            bone_index: id,
-            offset: offset.clone(),
-            offset_transform: Transform::from_matrix(offset),
-        }
-    }
-}
-
 impl NodeAnimation {
-    pub fn new(name: impl Into<String>, channel: &NodeAnim) -> Self {
+    pub fn new(name: &str, channel: &NodeAnim) -> Self {
         let positions: Vec<KeyPosition> = channel.position_keys.iter().map(|key| key.into()).collect();
-
         let rotations: Vec<KeyRotation> = channel.rotation_keys.iter().map(|key| key.into()).collect();
-
         let scales: Vec<KeyScale> = channel.scaling_keys.iter().map(|key| key.into()).collect();
 
         let name = name.into();
@@ -66,13 +46,6 @@ impl NodeAnimation {
             rotations,
             scales,
         }
-    }
-
-    pub fn get_animation_transform_matrix(&self, animation_time: f32) -> Mat4 {
-        let translation = Mat4::from_translation(self.interpolate_position(animation_time));
-        let rotation = Mat4::from_quat(self.interpolate_rotation(animation_time));
-        let scale = Mat4::from_scale(self.interpolate_scaling(animation_time));
-        translation * rotation * scale
     }
 
     pub fn get_animation_transform(&self, animation_time: f32) -> Transform {
@@ -172,5 +145,35 @@ impl NodeAnimation {
         let mid_way_length = animation_time - last_timestamp;
         let frames_diff = next_timestamp - last_timestamp;
         mid_way_length / frames_diff
+    }
+}
+
+impl From<&VectorKey> for KeyPosition {
+    fn from(vector_key: &VectorKey) -> Self {
+        KeyPosition {
+            // position: vec3(vector_key.value.x, vector_key.value.y, vector_key.value.z),
+            position: vector_key.value.clone(),
+            time_stamp: vector_key.time as f32,
+        }
+    }
+}
+
+impl From<&QuatKey> for KeyRotation {
+    fn from(quad_key: &QuatKey) -> Self {
+        KeyRotation {
+            //orientation: Quat::from_xyzw(quad_key.value.x, quad_key.value.y, quad_key.value.z, quad_key.value.w),
+            orientation: quad_key.value.clone(),
+            time_stamp: quad_key.time as f32,
+        }
+    }
+}
+
+impl From<&VectorKey> for KeyScale {
+    fn from(vector_key: &VectorKey) -> Self {
+        KeyScale {
+            // scale: vec3(vector_key.value.x, vector_key.value.y, vector_key.value.z),
+            scale: vector_key.value.clone(),
+            time_stamp: vector_key.time as f32,
+        }
     }
 }

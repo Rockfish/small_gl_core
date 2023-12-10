@@ -77,23 +77,14 @@ struct AnimationTransition {
 
 pub struct NodeTransform {
     transform: Transform,
-    meshes: Option<Vec<u32>>,
+    meshes: Rc<Vec<u32>>,
 }
 
 impl NodeTransform {
-    pub fn new(transform: Transform, meshes_vec: &[u32]) -> Self {
+    pub fn new(transform: Transform, meshes_vec: &Rc<Vec<u32>>) -> Self {
         NodeTransform {
             transform: transform.clone(),
-            meshes: if meshes_vec.is_empty() { None } else { Some(meshes_vec.into()) },
-        }
-    }
-}
-
-impl Default for NodeTransform {
-    fn default() -> Self {
-        NodeTransform {
-            transform: Transform::IDENTITY,
-            meshes: None,
+            meshes: meshes_vec.clone(),
         }
     }
 }
@@ -105,7 +96,7 @@ pub struct Animator {
     current_animation: PlayingAnimation,
     transitions: RefCell<Vec<AnimationTransition>>,
 
-    node_transforms: RefCell<HashMap<String, NodeTransform>>,
+    node_transforms: RefCell<HashMap<Rc<str>, NodeTransform>>,
 
     pub final_bone_matrices: RefCell<Vec<Mat4>>,
 }
@@ -218,7 +209,7 @@ impl Animator {
     pub fn calculate_transform_maps(
         node_data: &NodeData,
         node_animations: &Ref<Vec<NodeAnimation>>,
-        node_map: &mut RefMut<HashMap<String, NodeTransform>>,
+        node_map: &mut RefMut<HashMap<Rc<str>, NodeTransform>>,
         parent_transform: Transform,
         current_tick: f32,
         weight: f32,
@@ -231,11 +222,10 @@ impl Animator {
         }
     }
 
-    // sets transform maps
     fn calculate_transform(
         node_data: &NodeData,
         node_animations: &Ref<Vec<NodeAnimation>>,
-        node_map: &mut RefMut<HashMap<String, NodeTransform>>,
+        node_map: &mut RefMut<HashMap<Rc<str>, NodeTransform>>,
         parent_transform: Transform,
         current_tick: f32,
         weight: f32,
@@ -251,11 +241,11 @@ impl Animator {
         };
 
         node_map
-            .entry_ref(&node_data.name)
+            .entry_ref(node_data.name.as_ref())
             .and_modify(|n| {
                 n.transform = n.transform.mul_transform_weighted(global_transform, weight);
             })
-            .or_insert(NodeTransform::new(global_transform, node_data.meshes.as_slice()));
+            .or_insert(NodeTransform::new(global_transform, &node_data.meshes));
 
         global_transform
     }
@@ -272,18 +262,16 @@ impl Animator {
         let bone_data_map = current_animation.bone_data_map.borrow();
 
         for (node_name, node_transform) in self.node_transforms.borrow_mut().iter() {
-            if let Some(bone_data) = bone_data_map.get(node_name) {
+            if let Some(bone_data) = bone_data_map.get(node_name.as_ref()) {
                 let index = bone_data.bone_index as usize;
                 let mut final_bones = self.final_bone_matrices.borrow_mut();
                 let transform_matrix = node_transform.transform.mul_transform(bone_data.offset_transform).compute_matrix();
                 final_bones[index] = transform_matrix;
             }
 
-            if let Some(meshes) = &node_transform.meshes {
-                for mesh_index in meshes.iter() {
-                    self.model_animation.borrow().model.borrow_mut().meshes.borrow_mut()[*mesh_index as usize].node_transform =
-                        node_transform.transform.compute_matrix();
-                }
+            for mesh_index in node_transform.meshes.iter() {
+                self.model_animation.borrow().model.borrow_mut().meshes.borrow_mut()[*mesh_index as usize].node_transform =
+                    node_transform.transform.compute_matrix();
             }
         }
     }

@@ -1,5 +1,5 @@
 use crate::model::{BoneName, Model};
-use crate::node_animation::{BoneData, NodeAnimation};
+use crate::node_animation::NodeAnimation;
 use crate::transform::Transform;
 use crate::utils::HashMap;
 use glam::Mat4;
@@ -9,24 +9,23 @@ use russimp::scene::Scene;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-/// NodeData is local version of aiNode
 #[derive(Debug)]
 pub struct NodeData {
-    pub name: String,
+    pub name: Rc<str>,
     pub transform_matrix: Mat4,
     pub transform: Transform,
     pub children: Vec<NodeData>,
-    pub meshes: Vec<u32>,
+    pub meshes: Rc<Vec<u32>>,
 }
 
 impl NodeData {
     pub fn new() -> Self {
         NodeData {
-            name: String::new(),
+            name: Rc::from(""),
             transform_matrix: Mat4::IDENTITY,
             transform: Transform::IDENTITY,
             children: vec![],
-            meshes: vec![],
+            meshes: Rc::new(vec![]),
         }
     }
 }
@@ -34,11 +33,28 @@ impl NodeData {
 impl Default for NodeData {
     fn default() -> Self {
         NodeData {
-            name: String::new(),
+            name: Rc::from(""),
             transform_matrix: Mat4::IDENTITY,
             transform: Transform::IDENTITY,
             children: vec![],
-            meshes: vec![],
+            meshes: Rc::new(vec![]),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct BoneData {
+    pub name: Rc<str>,
+    pub bone_index: i32, // index connecting mesh bone_id array to transform in shader final_transform array
+    pub offset_transform: Transform,
+}
+
+impl BoneData {
+    pub fn new(name: &str, id: i32, offset: Mat4) -> Self {
+        BoneData {
+            name: name.into(),
+            bone_index: id,
+            offset_transform: Transform::from_matrix(offset),
         }
     }
 }
@@ -79,7 +95,6 @@ impl ModelAnimation {
         println!("animation - duration: {}   ticks_per_second: {}", &duration, &ticks_per_second);
 
         let root = scene.root.as_ref().unwrap().clone();
-        // let global_inverse_transform = convert_to_mat4(&root.transformation).inverse();
         let global_inverse_transform = root.transformation.inverse();
 
         let root_node = ModelAnimation::read_hierarchy_data(&root);
@@ -104,16 +119,15 @@ impl ModelAnimation {
     /// Converts scene.aiNode tree to local NodeData tree. Converting all the transforms to column major form.
     fn read_hierarchy_data(source: &Rc<Node>) -> NodeData {
         let mut node_data = NodeData {
-            name: source.name.clone(),
+            name: Rc::from(source.name.as_str()),
             //transformation: convert_to_mat4(&source.transformation),
             transform_matrix: source.transformation.clone(),
             transform: Transform::from_matrix(source.transformation.clone()),
             children: vec![],
-            meshes: source.meshes.clone(),
+            meshes: Rc::from(source.meshes.clone()),
         };
 
-        // println!("NodeData name: {}\n transform: {:?}\n", &node_data.name, &node_data.transformation);
-        println!("NodeData: {} meshes: {:?}", &node_data.name, &source.meshes);
+        // println!("NodeData: {} meshes: {:?}", &node_data.name, &source.meshes);
 
         for child in source.children.borrow().iter() {
             let node = ModelAnimation::read_hierarchy_data(child);
