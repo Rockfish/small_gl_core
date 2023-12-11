@@ -27,8 +27,6 @@ pub struct NodeAnimation {
     pub positions: Vec<KeyPosition>,
     pub rotations: Vec<KeyRotation>,
     pub scales: Vec<KeyScale>,
-    // pub post_state: u32,
-    // pub pre_state: u32,
 }
 
 impl NodeAnimation {
@@ -151,7 +149,6 @@ impl NodeAnimation {
 impl From<&VectorKey> for KeyPosition {
     fn from(vector_key: &VectorKey) -> Self {
         KeyPosition {
-            // position: vec3(vector_key.value.x, vector_key.value.y, vector_key.value.z),
             position: vector_key.value.clone(),
             time_stamp: vector_key.time as f32,
         }
@@ -161,7 +158,6 @@ impl From<&VectorKey> for KeyPosition {
 impl From<&QuatKey> for KeyRotation {
     fn from(quad_key: &QuatKey) -> Self {
         KeyRotation {
-            //orientation: Quat::from_xyzw(quad_key.value.x, quad_key.value.y, quad_key.value.z, quad_key.value.w),
             orientation: quad_key.value.clone(),
             time_stamp: quad_key.time as f32,
         }
@@ -171,7 +167,6 @@ impl From<&QuatKey> for KeyRotation {
 impl From<&VectorKey> for KeyScale {
     fn from(vector_key: &VectorKey) -> Self {
         KeyScale {
-            // scale: vec3(vector_key.value.x, vector_key.value.y, vector_key.value.z),
             scale: vector_key.value.clone(),
             time_stamp: vector_key.time as f32,
         }

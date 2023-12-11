@@ -74,7 +74,6 @@ pub struct ModelMesh {
     pub vertices: Vec<ModelVertex>,
     pub indices: Vec<u32>,
     pub textures: Vec<Rc<Texture>>,
-    pub node_transform: Mat4,
     pub vao: u32,
     pub vbo: u32,
     pub ebo: u32,
@@ -88,7 +87,6 @@ impl ModelMesh {
             vertices,
             indices,
             textures,
-            node_transform: Mat4::IDENTITY,
             vao: 0,
             vbo: 0,
             ebo: 0,
@@ -97,28 +95,6 @@ impl ModelMesh {
         mesh
     }
 
-    // pub fn render(&self, shader: &Rc<Shader>) {
-    //     unsafe {
-    //         // set the location and binding for all the textures
-    //         for (texture_count, texture_sample) in self.textures.iter().enumerate() {
-    //             // active proper texture unit before binding
-    //             gl::ActiveTexture(gl::TEXTURE0 + texture_count as u32);
-    //             // bind the texture to the texture unit
-    //             gl::BindTexture(gl::TEXTURE_2D, texture_sample.texture.id);
-    //
-    //             shader.set_int(&texture_sample.sample_name, texture_count as i32);
-    //         }
-    //
-    //         gl::BindVertexArray(self.vao);
-    //         gl::DrawElements(
-    //             gl::TRIANGLES,
-    //             self.indices.len() as i32,
-    //             gl::UNSIGNED_INT,
-    //             std::ptr::null::<GLvoid>(),
-    //         );
-    //         gl::BindVertexArray(0);
-    //     }
-    // }
     pub fn render(&self, shader: &Rc<Shader>) {
         let mut texture_count_map: HashMap<TextureType, u32> = HashMap::new();
 
@@ -138,10 +114,6 @@ impl ModelMesh {
                 gl::ActiveTexture(gl::TEXTURE0 + texture_unit as u32);
                 gl::BindTexture(gl::TEXTURE_2D, texture.id);
             }
-
-            shader.set_int("mesh_id", self.id);
-            shader.set_mat4("nodeTransform", &self.node_transform);
-            // shader.set_mat4("nodeTransform", &Mat4::IDENTITY);
 
             gl::BindVertexArray(self.vao);
             gl::DrawElements(

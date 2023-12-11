@@ -1,6 +1,7 @@
+use crate::animator::{AnimationClip, Animator};
 use crate::error::Error;
 use crate::error::Error::{MeshError, SceneError};
-use crate::model_animation::BoneData;
+use crate::model_animation::{BoneData, BoneName};
 use crate::model_mesh::{ModelMesh, ModelVertex};
 use crate::shader::Shader;
 use crate::texture::{Texture, TextureConfig, TextureFilter, TextureType, TextureWrap};
@@ -15,54 +16,42 @@ use std::os::raw::c_uint;
 use std::path::PathBuf;
 use std::ptr::*;
 use std::rc::Rc;
-
-pub type BoneName = String;
+use std::time::Duration;
 
 // model data
 #[derive(Debug, Clone)]
 pub struct Model {
     pub name: Rc<str>,
-    pub shader: Rc<Shader>,
-    // todo: remove shader from model since which shader depends the render context
     pub meshes: Rc<RefCell<Vec<ModelMesh>>>,
-    pub bone_data_map: Rc<RefCell<HashMap<BoneName, BoneData>>>,
-    pub bone_count: i32,
-}
-
-impl Default for Model {
-    fn default() -> Self {
-        Model {
-            name: Rc::from(""),
-            shader: Rc::new(Default::default()),
-            meshes: Rc::new(RefCell::new(vec![])),
-            bone_data_map: Rc::new(RefCell::new(Default::default())),
-            bone_count: 0,
-        }
-    }
+    pub animator: RefCell<Animator>,
 }
 
 impl Model {
-    pub fn render(&self) {
-        for mesh in self.meshes.borrow_mut().iter() {
-            mesh.render(&self.shader);
-        }
-    }
+    pub fn render(&self, shader: &Rc<Shader>) {
+        let animator = self.animator.borrow();
+        let final_bones = animator.final_bone_matrices.borrow_mut();
+        let final_nodes = animator.final_node_matrices.borrow_mut();
 
-    pub fn render_with_shader(&self, shader: &Rc<Shader>) {
+        for (i, bone_transform) in final_bones.iter().enumerate() {
+            shader.set_mat4(format!("finalBonesMatrices[{}]", i).as_str(), &bone_transform);
+        }
+
         for mesh in self.meshes.borrow_mut().iter() {
+            shader.set_mat4("nodeTransform", &final_nodes[mesh.id as usize]);
             mesh.render(shader);
         }
     }
 
-    pub fn render_with_transform(&self, position: Vec3, angle: f32, scale: Vec3, _delta_time: f32) {
-        let mut model_transform = Mat4::from_translation(position);
-        model_transform *= Mat4::from_axis_angle(vec3(0.0, 1.0, 0.0), angle.to_radians());
-        model_transform *= Mat4::from_scale(scale);
-        self.shader.set_mat4("model", &model_transform);
+    pub fn update_animation(&self, delta_time: f32) {
+        self.animator.borrow_mut().update_animation(delta_time);
+    }
 
-        for mesh in self.meshes.borrow_mut().iter() {
-            mesh.render(&self.shader);
-        }
+    pub fn play_clip(&self, clip: &Rc<AnimationClip>) {
+        self.animator.borrow_mut().play_clip(clip);
+    }
+
+    pub fn play_clip_with_transition(&self, clip: &Rc<AnimationClip>, transition_duration: Duration) {
+        self.animator.borrow_mut().play_clip_with_transition(clip, transition_duration);
     }
 }
 
@@ -74,18 +63,10 @@ struct AddedTextures {
 }
 
 #[derive(Debug)]
-struct AddedBone {
-    mesh_name: String,
-    bone_name: String,
-    bone_weight: f32,
-}
-
-#[derive(Debug)]
 pub struct ModelBuilder {
     pub name: String,
-    pub shader: Rc<Shader>,
     pub meshes: Vec<ModelMesh>,
-    pub bone_data_map: Rc<RefCell<HashMap<String, BoneData>>>,
+    pub bone_data_map: RefCell<HashMap<BoneName, BoneData>>,
     pub bone_count: i32,
     pub filepath: String,
     pub directory: PathBuf,
@@ -93,27 +74,24 @@ pub struct ModelBuilder {
     pub flip_v: bool,
     pub textures_cache: RefCell<Vec<Rc<Texture>>>,
     pub added_textures: Vec<AddedTextures>,
-    pub added_bones: Vec<AddedBone>,
     pub mesh_count: i32,
 }
 
 impl ModelBuilder {
-    pub fn new(name: impl Into<String>, shader: Rc<Shader>, path: impl Into<String>) -> Self {
+    pub fn new(name: impl Into<String>, path: impl Into<String>) -> Self {
         let filepath = path.into();
         let directory = PathBuf::from(&filepath).parent().unwrap().to_path_buf();
         ModelBuilder {
             name: name.into(),
-            shader,
             textures_cache: RefCell::new(vec![]),
             meshes: vec![],
-            bone_data_map: Rc::new(RefCell::new(HashMap::new())),
+            bone_data_map: RefCell::new(HashMap::new()),
             bone_count: 0,
             filepath,
             directory,
             gamma_correction: false,
             flip_v: false,
             added_textures: vec![],
-            added_bones: vec![],
             mesh_count: 0,
         }
     }
@@ -138,16 +116,6 @@ impl ModelBuilder {
         self
     }
 
-    pub fn add_bone(mut self, mesh_name: impl Into<String>, bone_name: impl Into<String>, bone_weight: f32) -> Self {
-        let added_bone = AddedBone {
-            mesh_name: mesh_name.into(),
-            bone_name: bone_name.into(),
-            bone_weight,
-        };
-        self.added_bones.push(added_bone);
-        self
-    }
-
     pub fn build(mut self) -> Result<Model, Error> {
         let scene = ModelBuilder::load_russimp_scene(self.filepath.as_str())?;
 
@@ -155,28 +123,12 @@ impl ModelBuilder {
 
         self.add_textures()?;
 
-        let model = Model {
-            name: Rc::from(self.name),
-            shader: self.shader,
-            meshes: Rc::from(RefCell::new(self.meshes)),
-            bone_data_map: self.bone_data_map,
-            bone_count: self.bone_count,
-        };
-
-        Ok(model)
-    }
-
-    pub fn build_with_scene(mut self, scene: &Scene) -> Result<Model, Error> {
-        self.load_model(scene)?;
-
-        self.add_textures()?;
+        let animator = Animator::new(&scene, self.bone_data_map);
 
         let model = Model {
             name: Rc::from(self.name),
-            shader: self.shader,
             meshes: Rc::from(RefCell::new(self.meshes)),
-            bone_data_map: self.bone_data_map,
-            bone_count: self.bone_count,
+            animator: animator.into(),
         };
 
         Ok(model)
@@ -200,7 +152,6 @@ impl ModelBuilder {
         Ok(scene)
     }
 
-    // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
     fn load_model(&mut self, scene: &Scene) -> Result<(), Error> {
         match &scene.root {
             None => Err(SceneError("Error getting scene root node".to_string())),
@@ -266,8 +217,6 @@ impl ModelBuilder {
 
         self.extract_bone_weights_for_vertices(&mut vertices, r_mesh);
 
-        self.add_bones(&r_mesh.name, &mut vertices)?;
-
         let mesh = ModelMesh::new(self.mesh_count, &r_mesh.name, vertices, indices, textures);
         self.mesh_count += 1;
         Ok(mesh)
@@ -318,23 +267,6 @@ impl ModelBuilder {
                 }
             } else {
                 return Err(MeshError(format!("add_texture mesh: {} not found", &added_texture.mesh_name)));
-            }
-        }
-        Ok(())
-    }
-
-    fn add_bones(&mut self, mesh_name: &String, vertices: &mut Vec<ModelVertex>) -> Result<(), Error> {
-        for added_bone in &self.added_bones {
-            if added_bone.mesh_name == *mesh_name {
-                let bone_map = self.bone_data_map.borrow();
-                let option_bone_data = bone_map.get(&added_bone.bone_name);
-                if let Some(bone_data) = option_bone_data {
-                    for vertex in vertices.iter_mut() {
-                        vertex.set_bone_data(bone_data.bone_index, added_bone.bone_weight);
-                    }
-                } else {
-                    return Err(MeshError(format!("add_bones bone: {} not found", &added_bone.bone_name)));
-                }
             }
         }
         Ok(())

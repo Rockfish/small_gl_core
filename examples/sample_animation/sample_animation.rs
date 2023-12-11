@@ -13,16 +13,13 @@ use glam::*;
 use glfw::{Action, Context, Key};
 use image::ColorType;
 use log::error;
-use small_gl_core::animator::{AnimationClip, AnimationRepeat, Animator};
+use small_gl_core::animator::{AnimationClip, AnimationRepeat};
 use small_gl_core::camera::{Camera, CameraMovement};
 use small_gl_core::gl;
 use small_gl_core::gl::{GLint, GLsizei, GLuint, GLvoid};
-use small_gl_core::model::{Model, ModelBuilder};
-use small_gl_core::model_animation::ModelAnimation;
+use small_gl_core::model::ModelBuilder;
 use small_gl_core::shader::Shader;
 use small_gl_core::texture::TextureType;
-use std::cell::RefCell;
-use std::process::id;
 use std::rc::Rc;
 use std::time::Duration;
 
@@ -91,14 +88,14 @@ fn main() {
         gl::Enable(gl::DEPTH_TEST);
     }
 
-    let shader =
-        Rc::new(
-            Shader::new(
-                "examples/sample_animation/anim_model.vert",
-                "examples/sample_animation/anim_model.frag",
-            )
-            .unwrap(),
-        );
+    // let shader =
+    //     Rc::new(
+    //         Shader::new(
+    //             "examples/sample_animation/anim_model.vert",
+    //             "examples/sample_animation/anim_model.frag",
+    //         )
+    //         .unwrap(),
+    //     );
 
     let shader =
         Rc::new(
@@ -125,10 +122,10 @@ fn main() {
     // let model_path = "/Users/john/Dev_Rust/Dev/learn_opengl_with_rust/resources/objects/cyborg/cyborg.obj"; // not animated
 
     // let scene = AssimpScene::load_assimp_scene(model_path).unwrap();
-    let scene = ModelBuilder::load_russimp_scene(model_path).unwrap();
+    // let scene = ModelBuilder::load_russimp_scene(model_path).unwrap();
 
     #[rustfmt::skip]
-    let dancing_model = ModelBuilder::new("model", shader.clone(), model_path)
+    let dancing_model = ModelBuilder::new("model", model_path)
         .add_texture("Player", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Player_D.tga") // Player model
         .add_texture( "Player", TextureType::Specular, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Player_M.tga") // Player model
         .add_texture( "Player", TextureType::Emissive, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Player_E.tga", ) // Player model
@@ -155,16 +152,8 @@ fn main() {
         // .add_texture("Box002", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/small_gl_core/examples/sample_animation/container2.png") // capoeira
         // .add_texture("Box003", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/small_gl_core/examples/sample_animation/container2.png") // capoeira
         // .add_texture("Cylinder001", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/small_gl_core/examples/sample_animation/animated_cube/AnimatedCube_BaseColor.png") // capoeira
-        .build_with_scene(&scene)
+        .build()
         .unwrap();
-
-    let dancing_model = Rc::new(RefCell::new(dancing_model));
-
-    // animator.update_animation_sequence(55.0, 130.0, state.deltaTime); // Idle
-    // animator.update_animation_sequence(134.0, 154.0, state.deltaTime); // Forward running
-    // animator.update_animation_sequence(159.0, 179.0, state.deltaTime); // Backwards running
-    // animator.update_animation_sequence(209.0, 229.0, state.deltaTime); // Left running
-    // animator.update_animation_sequence(234.0, 293.0, state.deltaTime); // Dying
 
     let idle = Rc::new(AnimationClip::new("idle", 55.0, 130.0, AnimationRepeat::Forever));
     let forward = Rc::new(AnimationClip::new("forward", 134.0, 154.0, AnimationRepeat::Forever));
@@ -173,11 +162,9 @@ fn main() {
     let left = Rc::new(AnimationClip::new("left", 209.0, 229.0, AnimationRepeat::Forever));
     let dying = Rc::new(AnimationClip::new("dying", 234.0, 293.0, AnimationRepeat::Once));
 
-    let dance_animation = Rc::new(RefCell::new(ModelAnimation::new(&scene, dancing_model.clone())));
-    let mut animator = Animator::new(&dance_animation);
+    dancing_model.play_clip(&idle);
+    dancing_model.play_clip_with_transition(&forward, Duration::from_secs(6));
 
-    animator.play_clip(&idle);
-    animator.play_clip_with_transition(&forward, Duration::from_secs(6));
     // animator.play_clip_with_transition(&forward, Duration::from_secs(6));
     // animator.play_clip_with_transition(&right, Duration::from_secs(6));
     // animator.play_clip_with_transition(&left, Duration::from_secs(3));
@@ -216,7 +203,7 @@ fn main() {
 
         // animation - duration: 294   ticks_per_second: 30
 
-        animator.update_animation(state.deltaTime);
+        dancing_model.update_animation(state.deltaTime);
 
         unsafe {
             // render
@@ -232,12 +219,6 @@ fn main() {
             let view = state.camera.get_view_matrix();
             shader.set_mat4("projection", &projection);
             shader.set_mat4("view", &view);
-
-            let final_bones = animator.final_bone_matrices.borrow_mut();
-
-            for (i, bone_transform) in final_bones.iter().enumerate() {
-                shader.set_mat4(format!("finalBonesMatrices[{}]", i).as_str(), &bone_transform);
-            }
 
             let mut model = Mat4::IDENTITY;
             // model *= Mat4::from_rotation_x(-90.0f32.to_radians());
@@ -255,7 +236,7 @@ fn main() {
             shader.set_mat4("aimRot", &Mat4::IDENTITY);
             shader.set_mat4("lightSpaceMatrix", &Mat4::IDENTITY);
 
-            dancing_model.borrow().render();
+            dancing_model.render(&shader);
         }
 
         window.swap_buffers();

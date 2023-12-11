@@ -12,19 +12,16 @@ pub struct Cube {
 }
 
 impl Cube {
-    pub fn new(name: &str, shader: Rc<Shader>) -> Model {
-        let mesh = Cube::get_meshes();
-
-        let model = Model {
-            name: Rc::from(name),
-            shader,
-            meshes: Rc::new(RefCell::new(vec![mesh])),
-            bone_data_map: Rc::new(RefCell::new(Default::default())),
-            bone_count: 0,
-        };
-
-        model
-    }
+    // pub fn new(name: &str, shader: Rc<Shader>) -> Model {
+    //     let mesh = Cube::get_meshes();
+    //
+    //     let model = Model {
+    //         name: Rc::from(name),
+    //         meshes: Rc::new(RefCell::new(vec![mesh])),
+    //     };
+    //
+    //     model
+    // }
 
     fn get_meshes() -> ModelMesh {
         let (vertices, indices) = Cube::data();
