@@ -7,6 +7,7 @@ pub mod animator;
 pub mod assimp_dump;
 pub mod camera;
 pub mod error;
+pub mod hash_map;
 pub mod macros;
 pub mod mesh;
 pub mod model;

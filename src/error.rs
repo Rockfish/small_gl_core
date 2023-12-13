@@ -1,8 +1,9 @@
 #[derive(Debug)]
 pub enum Error {
+    PathError(String),
     FileError(std::io::Error),
     ShaderError(String),
-    ImageError(image::ImageError),
+    ImageError(String),
     ModelError(russimp::RussimpError),
     SceneError(String),
     MeshError(String),
@@ -18,7 +19,7 @@ impl From<std::io::Error> for Error {
 
 impl From<image::ImageError> for Error {
     fn from(s: image::ImageError) -> Self {
-        Error::ImageError(s)
+        Error::ImageError(format!("{:?}", s))
     }
 }
 

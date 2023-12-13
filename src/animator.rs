@@ -1,11 +1,12 @@
+use crate::hash_map::HashMap;
 use crate::model_animation::{BoneData, BoneName, ModelAnimation, NodeData};
 use crate::node_animation::NodeAnimation;
 use crate::transform::Transform;
-use crate::utils::HashMap;
 use glam::Mat4;
 use russimp::node::Node;
 use russimp::scene::Scene;
 use std::cell::{Ref, RefCell, RefMut};
+use std::ops::Deref;
 use std::rc::Rc;
 use std::time::Duration;
 
@@ -234,7 +235,7 @@ impl Animator {
         let mut final_node = self.final_node_matrices.borrow_mut();
 
         for (node_name, node_transform) in self.node_transforms.borrow_mut().iter() {
-            if let Some(bone_data) = bone_data_map.get(node_name.as_ref()) {
+            if let Some(bone_data) = bone_data_map.get(node_name.deref()) {
                 let index = bone_data.bone_index as usize;
                 let transform_matrix = node_transform.transform.mul_transform(bone_data.offset_transform).compute_matrix();
                 final_bones[index] = transform_matrix;

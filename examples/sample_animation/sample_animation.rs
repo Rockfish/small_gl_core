@@ -97,14 +97,13 @@ fn main() {
     //         .unwrap(),
     //     );
 
-    let shader =
-        Rc::new(
-            Shader::new(
-                "examples/sample_animation/player_shader.vert",
-                "examples/sample_animation/player_shader.frag",
-            )
-            .unwrap(),
-        );
+    let shader = Rc::new(
+        Shader::new(
+            "examples/sample_animation/player_shader.vert",
+            "examples/sample_animation/player_shader.frag",
+        )
+        .unwrap(),
+    );
 
     let model_path = "examples/sample_animation/vampire/dancing_vampire.dae";
     // let model_path = "/Users/john/Dev_Rust/Dev/russimp_glam/models/GLTF2/round_wooden_table_01_4k/round_wooden_table_01_4k.gltf";
@@ -112,6 +111,8 @@ fn main() {
     // let model_path = "/Users/john/Dev_Assets/glTF-Sample-Models/2.0/CesiumMan/glTF/CesiumMan.gltf"; // works
     // let model_path = "/Users/john/Dev_Rust/Repos/OpenGL-Tutorials/LearnOpenGL/8.Guest Articles/2020/2.Skeletal Animation/resources/objects/vampire/dancing_vampire.dae";
     let model_path = "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Player.fbx";
+    // let model_path = "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Eeldog/EelDog.FBX";
+    // let model_path = "/Users/john/Dev_Rust/Dev/bevy/assets/models/animated/Fox.glb";
     // let model_path = "/Users/john/Dev_Assets/animated-characters-3/Model/characterMedium.fbx";
     // let model_path = "/Users/john/Dev_Rust/Dev/alien_explorer/assets/models/alien.glb";
     // let cube = Cube::new("cube", shader.clone());
@@ -134,6 +135,8 @@ fn main() {
         .add_texture( "Gun", TextureType::Specular, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Gun_M.tga", ) // Player model
         .add_texture( "Gun", TextureType::Emissive, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Gun_E.tga", ) // Player model
         .add_texture( "Gun", TextureType::Normals, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Player/Textures/Gun_NRM.tga", ) // Player model
+        // .add_texture("Eeldog", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Eeldog/Eeldog_Albedo.tif")
+        // .add_texture("Eeldog", TextureType::Specular, "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Eeldog/Eeldog_Normal.tif")
         // .add_texture("characterMedium", TextureType::Diffuse, "/Users/john/Dev_Assets/animated-characters-3/Skins/humanFemaleA.png")  // characterMedium model
         // .add_texture("Box016", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/small_gl_core/examples/sample_animation/container2.png") // capoeira
         // .add_texture("Box009", TextureType::Diffuse, "/Users/john/Dev_Rust/Dev/small_gl_core/examples/sample_animation/container2.png") // capoeira

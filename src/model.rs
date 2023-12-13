@@ -1,20 +1,18 @@
 use crate::animator::{AnimationClip, Animator};
 use crate::error::Error;
 use crate::error::Error::{MeshError, SceneError};
+use crate::hash_map::HashMap;
 use crate::model_animation::{BoneData, BoneName};
 use crate::model_mesh::{ModelMesh, ModelVertex};
 use crate::shader::Shader;
 use crate::texture::{Texture, TextureConfig, TextureFilter, TextureType, TextureWrap};
 use crate::transform::Transform;
-use crate::utils::HashMap;
+use crate::utils::get_exists_filename;
 use glam::*;
 use russimp::node::Node;
 use russimp::scene::{PostProcess, Scene};
-use russimp::sys::*;
 use std::cell::RefCell;
-use std::os::raw::c_uint;
 use std::path::PathBuf;
-use std::ptr::*;
 use std::rc::Rc;
 use std::time::Duration;
 
@@ -72,6 +70,7 @@ pub struct ModelBuilder {
     pub directory: PathBuf,
     pub gamma_correction: bool,
     pub flip_v: bool,
+    pub load_textures: bool,
     pub textures_cache: RefCell<Vec<Rc<Texture>>>,
     pub added_textures: Vec<AddedTextures>,
     pub mesh_count: i32,
@@ -91,6 +90,7 @@ impl ModelBuilder {
             directory,
             gamma_correction: false,
             flip_v: false,
+            load_textures: true,
             added_textures: vec![],
             mesh_count: 0,
         }
@@ -103,6 +103,11 @@ impl ModelBuilder {
 
     pub fn correct_gamma(mut self) -> Self {
         self.gamma_correction = true;
+        self
+    }
+
+    pub fn skip_textures(mut self) -> Self {
+        self.load_textures = false;
         self
     }
 
@@ -135,20 +140,19 @@ impl ModelBuilder {
     }
 
     pub fn load_russimp_scene(file_path: &str) -> Result<Scene, Error> {
-        let scene =
-            Scene::from_file(
-                file_path,
-                vec![
-                    PostProcess::Triangulate,
-                    PostProcess::GenerateSmoothNormals,
-                    PostProcess::FlipUVs,
-                    PostProcess::CalculateTangentSpace,
-                    PostProcess::FixOrRemoveInvalidData,
-                    // PostProcess::JoinIdenticalVertices,
-                    // PostProcess::SortByPrimitiveType,
-                    // PostProcess::EmbedTextures,
-                ],
-            )?;
+        let scene = Scene::from_file(
+            file_path,
+            vec![
+                PostProcess::Triangulate,
+                PostProcess::GenerateSmoothNormals,
+                PostProcess::FlipUVs,
+                PostProcess::CalculateTangentSpace,
+                PostProcess::FixOrRemoveInvalidData,
+                // PostProcess::JoinIdenticalVertices,
+                // PostProcess::SortByPrimitiveType,
+                // PostProcess::EmbedTextures,
+            ],
+        )?;
         Ok(scene)
     }
 
@@ -207,10 +211,14 @@ impl ModelBuilder {
 
         let material = &scene.materials[r_mesh.material_index as usize];
 
+        // println!("material: {:#?}", material);
+
         for (r_texture_type, r_texture) in material.textures.iter() {
             let texture_type = TextureType::convert_from(r_texture_type);
-            let texture = self.load_texture(&texture_type, r_texture.borrow().filename.as_str())?;
-            textures.push(texture);
+            match self.load_texture(&texture_type, r_texture.borrow().filename.as_str()) {
+                Ok(texture) => textures.push(texture),
+                Err(e) => println!("{:?}", e),
+            }
         }
 
         println!("mesh name: {}", &r_mesh.name);
@@ -274,21 +282,21 @@ impl ModelBuilder {
 
     /// load or retrieve copy of texture
     fn load_texture(&self, texture_type: &TextureType, texture_filename: &str) -> Result<Rc<Texture>, Error> {
-        let full_path = self.directory.join(&texture_filename);
+        let filepath = get_exists_filename(&self.directory, texture_filename)?;
 
         let mut texture_cache = self.textures_cache.borrow_mut();
 
-        let cached_texture = texture_cache.iter().find(|t| t.texture_path == full_path.clone().into_os_string());
+        let cached_texture = texture_cache.iter().find(|t| t.texture_path == filepath.clone().into_os_string());
 
         match cached_texture {
             None => {
                 let texture = Rc::new(Texture::new(
-                    full_path,
+                    &filepath,
                     &TextureConfig {
                         flip_v: self.flip_v,
                         gamma_correction: self.gamma_correction,
                         filter: TextureFilter::Linear,
-                        wrap: TextureWrap::Clamp,
+                        wrap: TextureWrap::Repeat,
                         texture_type: texture_type.clone(),
                     },
                 )?);
@@ -301,14 +309,4 @@ impl ModelBuilder {
             Some(texture) => Ok(texture.clone()),
         }
     }
-}
-
-pub fn get_vec_from_parts(raw_data: *mut aiVector3D, size: c_uint) -> Vec<Vec3> {
-    let slice = slice_from_raw_parts(raw_data, size as usize);
-    if slice.is_null() {
-        return vec![];
-    }
-
-    let raw_array = unsafe { slice.as_ref() }.unwrap();
-    raw_array.iter().map(|aiv| vec3(aiv.x, aiv.y, aiv.z)).collect()
 }

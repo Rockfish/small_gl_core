@@ -1,4 +1,5 @@
 use crate::error::Error;
+use crate::error::Error::ImageError;
 use crate::gl;
 use crate::gl::{GLint, GLsizei, GLuint, GLvoid};
 use image::ColorType;
@@ -199,98 +200,98 @@ pub struct Texture {
 }
 
 impl Texture {
-    pub fn new(texture_path: impl Into<OsString>, texture_config: &TextureConfig) -> Result<Texture, Error> {
-        let path = PathBuf::from(texture_path.into());
-        let (id, width, height) = Texture::load_texture(&path, texture_config)?;
-        let texture =
-            Texture {
-                id,
-                texture_path: path.into(),
-                texture_type: texture_config.texture_type,
-                width,
-                height,
-            };
+    pub fn new(file_path: impl Into<PathBuf>, texture_config: &TextureConfig) -> Result<Texture, Error> {
+        let file_path = file_path.into();
+        let (id, width, height) = load_texture(&file_path, texture_config)?;
+        let texture = Texture {
+            id,
+            texture_path: file_path.into(),
+            texture_type: texture_config.texture_type,
+            width,
+            height,
+        };
         Ok(texture)
     }
+}
 
-    pub fn load_texture(texture_path: &PathBuf, texture_config: &TextureConfig) -> Result<(GLuint, u32, u32), Error> {
-        let mut texture_id: GLuint = 0;
+pub fn load_texture(texture_path: &PathBuf, texture_config: &TextureConfig) -> Result<(GLuint, u32, u32), Error> {
+    let mut texture_id: GLuint = 0;
 
-        let img = image::open(texture_path)?;
-        let (width, height) = (img.width() as GLsizei, img.height() as GLsizei);
+    let img = match image::open(texture_path) {
+        Ok(img) => img,
+        Err(e) => return Err(ImageError(format!("image error: {:?}  file: {:?}", e, texture_path))),
+    };
 
-        let color_type = img.color();
+    let (width, height) = (img.width() as GLsizei, img.height() as GLsizei);
 
-        let img = if texture_config.flip_v { img.flipv() } else { img };
+    let color_type = img.color();
 
-        unsafe {
-            let internal_format: c_uint;
-            let data_format: c_uint;
-            match color_type {
-                ColorType::L8 => {
-                    internal_format = gl::RED;
-                    data_format = gl::RED;
-                }
-                ColorType::Rgb8 => {
-                    internal_format = if texture_config.gamma_correction { gl::SRGB } else { gl::RGB };
-                    data_format = gl::RGB;
-                }
-                ColorType::Rgba8 => {
-                    internal_format = if texture_config.gamma_correction {
-                        gl::SRGB_ALPHA
-                    } else {
-                        gl::RGBA
-                    };
-                    data_format = gl::RGBA;
-                }
-                _ => panic!("no mapping for color type"),
-            };
+    let img = if texture_config.flip_v { img.flipv() } else { img };
 
-            let data = match color_type {
-                ColorType::L8 => img.into_rgb8().into_raw(),
-                ColorType::Rgb8 => img.into_rgb8().into_raw(),
-                ColorType::Rgba8 => img.into_rgba8().into_raw(),
-                _ => panic!("no mapping for color type"),
-            };
+    unsafe {
+        let internal_format: c_uint;
+        let data_format: c_uint;
+        match color_type {
+            ColorType::L8 => {
+                internal_format = gl::RED;
+                data_format = gl::RED;
+            }
+            ColorType::Rgb8 => {
+                internal_format = if texture_config.gamma_correction { gl::SRGB } else { gl::RGB };
+                data_format = gl::RGB;
+            }
+            ColorType::Rgba8 => {
+                internal_format = if texture_config.gamma_correction {
+                    gl::SRGB_ALPHA
+                } else {
+                    gl::RGBA
+                };
+                data_format = gl::RGBA;
+            }
+            _ => panic!("no mapping for color type"),
+        };
 
-            gl::GenTextures(1, &mut texture_id);
+        let data = match color_type {
+            ColorType::L8 => img.into_rgb8().into_raw(),
+            ColorType::Rgb8 => img.into_rgb8().into_raw(),
+            ColorType::Rgba8 => img.into_rgba8().into_raw(),
+            _ => panic!("no mapping for color type"),
+        };
 
-            // not needed here
-            // gl::ActiveTexture(gl::TEXTURE0 + texture_config.texture_unit);
+        gl::GenTextures(1, &mut texture_id);
 
-            gl::BindTexture(gl::TEXTURE_2D, texture_id);
-            gl::TexImage2D(
-                gl::TEXTURE_2D,
-                0,
-                internal_format as GLint,
-                width,
-                height,
-                0,
-                data_format,
-                gl::UNSIGNED_BYTE,
-                data.as_ptr() as *const GLvoid,
-            );
-            gl::GenerateMipmap(gl::TEXTURE_2D);
+        gl::BindTexture(gl::TEXTURE_2D, texture_id);
+        gl::TexImage2D(
+            gl::TEXTURE_2D,
+            0,
+            internal_format as GLint,
+            width,
+            height,
+            0,
+            data_format,
+            gl::UNSIGNED_BYTE,
+            data.as_ptr() as *const GLvoid,
+        );
+        gl::GenerateMipmap(gl::TEXTURE_2D);
 
-            let wrap_param = match texture_config.wrap {
-                TextureWrap::Clamp => gl::CLAMP_TO_EDGE,
-                TextureWrap::Repeat => gl::REPEAT,
-            };
+        let wrap_param = match texture_config.wrap {
+            TextureWrap::Clamp => gl::CLAMP_TO_EDGE,
+            TextureWrap::Repeat => gl::REPEAT,
+        };
 
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, wrap_param as GLint);
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, wrap_param as GLint);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, wrap_param as GLint);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, wrap_param as GLint);
 
-            match texture_config.filter {
-                TextureFilter::Linear => {
-                    gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR_MIPMAP_LINEAR as GLint);
-                    gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as GLint);
-                }
-                TextureFilter::Nearest => {
-                    gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST as GLint);
-                    gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as GLint);
-                }
+        match texture_config.filter {
+            TextureFilter::Linear => {
+                gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR_MIPMAP_LINEAR as GLint);
+                gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as GLint);
+            }
+            TextureFilter::Nearest => {
+                gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST as GLint);
+                gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as GLint);
             }
         }
-        Ok((texture_id, width as u32, height as u32))
     }
+    Ok((texture_id, width as u32, height as u32))
 }

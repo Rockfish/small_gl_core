@@ -4,8 +4,8 @@ use russimp::bone::Bone;
 use russimp::mesh::Mesh;
 use russimp::node::Node;
 use russimp::scene::Scene;
+use small_gl_core::hash_map::HashMap;
 use small_gl_core::model::ModelBuilder;
-use small_gl_core::utils::HashMap;
 use std::rc::Rc;
 
 fn main() {

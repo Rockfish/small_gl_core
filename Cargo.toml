@@ -16,6 +16,7 @@ serde = { version = "1", features = ["derive"] }
 
 ahash = "0.8.3"
 hashbrown = { version = "0.14", features = ["serde"] }
+rand = "0.8.5"
 
 [dev-dependencies]
 glfw = "0.54.0"

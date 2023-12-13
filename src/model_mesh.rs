@@ -1,12 +1,10 @@
 use crate::gl;
 use crate::gl::{GLsizei, GLsizeiptr, GLvoid};
 use crate::shader::Shader;
-use crate::texture::{Texture, TextureType};
-use crate::utils::HashMap;
+use crate::texture::Texture;
 use glam::u32;
 use glam::*;
 use std::mem;
-use std::ops::Add;
 use std::rc::Rc;
 
 const MAX_BONE_INFLUENCE: usize = 4;
@@ -96,22 +94,12 @@ impl ModelMesh {
     }
 
     pub fn render(&self, shader: &Rc<Shader>) {
-        let mut texture_count_map: HashMap<TextureType, u32> = HashMap::new();
-
         unsafe {
-            for (texture_unit, texture) in self.textures.iter().enumerate() {
-                if !texture_count_map.contains_key(&texture.texture_type) {
-                    texture_count_map.insert(texture.texture_type.clone(), 0);
-                }
+            for texture in self.textures.iter() {
+                let texture_name = texture.texture_type.to_string();
+                shader.set_int(&texture_name, texture.id as i32);
 
-                let num = texture_count_map[&texture.texture_type] + 1;
-                *texture_count_map.get_mut(&texture.texture_type).unwrap() = num;
-
-                let texture_name = texture.texture_type.to_string().add(&num.to_string());
-
-                shader.set_int(&texture_name, texture_unit as i32);
-
-                gl::ActiveTexture(gl::TEXTURE0 + texture_unit as u32);
+                gl::ActiveTexture(gl::TEXTURE0 + texture.id as u32);
                 gl::BindTexture(gl::TEXTURE_2D, texture.id);
             }
 
