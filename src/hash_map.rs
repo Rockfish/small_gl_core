@@ -5,14 +5,14 @@ pub use hashbrown;
 
 use std::{
     fmt::Debug,
-    hash::{BuildHasher, BuildHasherDefault, Hash},
+    hash::{BuildHasher, BuildHasherDefault},
 };
 
 /// A hasher builder that will create a fixed hasher.
 #[derive(Debug, Clone, Default)]
 pub struct FixedState;
 
-impl std::hash::BuildHasher for FixedState {
+impl BuildHasher for FixedState {
     type Hasher = AHasher;
 
     #[inline]

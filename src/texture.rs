@@ -73,7 +73,6 @@ impl TextureType {
             russimp::material::TextureType::ClearCoat => TextureType::ClearCoat,
             russimp::material::TextureType::Transmission => TextureType::Transmission,
             russimp::material::TextureType::Force32bit => TextureType::Force32bit,
-            _ => panic!("Unsupported texture type: {:?}", r_texture_type),
         }
     }
 }

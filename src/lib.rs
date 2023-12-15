@@ -4,7 +4,6 @@
 pub mod gl;
 
 pub mod animator;
-pub mod assimp_dump;
 pub mod camera;
 pub mod error;
 pub mod hash_map;

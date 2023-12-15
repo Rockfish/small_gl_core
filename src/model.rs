@@ -54,7 +54,7 @@ impl Model {
 }
 
 #[derive(Debug)]
-struct AddedTextures {
+pub struct AddedTextures {
     mesh_name: String,
     texture_type: TextureType,
     texture_filename: String,
@@ -234,7 +234,7 @@ impl ModelBuilder {
         let mut bone_data_map = self.bone_data_map.borrow_mut();
 
         for bone in &r_mesh.bones {
-            let mut bone_id = -1;
+            let bone_id: i32;
 
             match bone_data_map.get(&bone.name) {
                 None => {
@@ -267,8 +267,8 @@ impl ModelBuilder {
     fn add_textures(&mut self) -> Result<(), Error> {
         for added_texture in &self.added_textures {
             let texture = self.load_texture(&added_texture.texture_type, added_texture.texture_filename.as_str())?;
-            let mut mesh = self.meshes.iter_mut().find(|mesh| mesh.name == added_texture.mesh_name);
-            if let Some(mut model_mesh) = mesh {
+            let mesh = self.meshes.iter_mut().find(|mesh| mesh.name == added_texture.mesh_name);
+            if let Some(model_mesh) = mesh {
                 let path = self.directory.join(&added_texture.texture_filename).into_os_string();
                 if model_mesh.textures.iter().find(|t| t.texture_path == path).is_none() {
                     model_mesh.textures.push(texture);
