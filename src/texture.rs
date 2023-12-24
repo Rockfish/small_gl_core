@@ -143,6 +143,7 @@ pub struct TextureConfig {
     pub filter: TextureFilter,
     pub wrap: TextureWrap,
     pub flip_v: bool,
+    pub flip_h: bool,
     pub gamma_correction: bool,
 }
 
@@ -159,6 +160,7 @@ impl TextureConfig {
             filter: TextureFilter::Linear,
             wrap: TextureWrap::Clamp,
             flip_v: false,
+            flip_h: false,
             gamma_correction: false,
         }
     }
@@ -180,6 +182,11 @@ impl TextureConfig {
 
     pub fn set_flipv(mut self, flip_v: bool) -> Self {
         self.flip_v = flip_v;
+        self
+    }
+
+    pub fn set_fliph(mut self, flip_h: bool) -> Self {
+        self.flip_h = flip_h;
         self
     }
 
@@ -226,6 +233,8 @@ pub fn load_texture(texture_path: &PathBuf, texture_config: &TextureConfig) -> R
     let color_type = img.color();
 
     let img = if texture_config.flip_v { img.flipv() } else { img };
+    let img = if texture_config.flip_h { img.fliph() } else { img };
+
 
     unsafe {
         let internal_format: c_uint;
@@ -258,8 +267,8 @@ pub fn load_texture(texture_path: &PathBuf, texture_config: &TextureConfig) -> R
         };
 
         gl::GenTextures(1, &mut texture_id);
-
         gl::BindTexture(gl::TEXTURE_2D, texture_id);
+
         gl::TexImage2D(
             gl::TEXTURE_2D,
             0,

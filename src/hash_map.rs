@@ -23,7 +23,7 @@ impl BuildHasher for FixedState {
             0b11001111011010110111100010110101,
             0b00000100001111100011010011010101,
         )
-            .build_hasher()
+        .build_hasher()
     }
 }
 

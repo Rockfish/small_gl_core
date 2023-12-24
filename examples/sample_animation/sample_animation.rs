@@ -168,6 +168,16 @@ fn main() {
     dancing_model.play_clip(&idle);
     dancing_model.play_clip_with_transition(&forward, Duration::from_secs(6));
 
+    let model_path = "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Bullet/Bullet.FBX";
+    let bullet_model = ModelBuilder::new("bullet", model_path)
+        .add_texture(
+            "Plane001",
+            TextureType::Diffuse,
+            "/Users/john/Dev_Rust/Dev/angry_gl_bots_rust/assets/Models/Bullet/Textures/BulletTexture.png",
+        )
+        .build()
+        .unwrap();
+
     // animator.play_clip_with_transition(&forward, Duration::from_secs(6));
     // animator.play_clip_with_transition(&right, Duration::from_secs(6));
     // animator.play_clip_with_transition(&left, Duration::from_secs(3));
@@ -240,6 +250,13 @@ fn main() {
             shader.set_mat4("lightSpaceMatrix", &Mat4::IDENTITY);
 
             dancing_model.render(&shader);
+
+            let mut model = Mat4::IDENTITY;
+            // model *= Mat4::from_rotation_x(-90.0f32.to_radians());
+            model = model * Mat4::from_scale(vec3(2.0, 2.0, 2.0));
+
+            shader.set_mat4("model", &model);
+            bullet_model.render(&shader);
         }
 
         window.swap_buffers();

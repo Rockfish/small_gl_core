@@ -70,9 +70,10 @@ pub struct ModelBuilder {
     pub directory: PathBuf,
     pub gamma_correction: bool,
     pub flip_v: bool,
+    pub flip_h: bool,
     pub load_textures: bool,
     pub textures_cache: RefCell<Vec<Rc<Texture>>>,
-    pub added_textures: Vec<AddedTextures>,
+    added_textures: Vec<AddedTextures>,
     pub mesh_count: i32,
 }
 
@@ -90,6 +91,7 @@ impl ModelBuilder {
             directory,
             gamma_correction: false,
             flip_v: false,
+            flip_h: false,
             load_textures: true,
             added_textures: vec![],
             mesh_count: 0,
@@ -294,6 +296,7 @@ impl ModelBuilder {
                     &filepath,
                     &TextureConfig {
                         flip_v: self.flip_v,
+                        flip_h: self.flip_h,
                         gamma_correction: self.gamma_correction,
                         filter: TextureFilter::Linear,
                         wrap: TextureWrap::Repeat,

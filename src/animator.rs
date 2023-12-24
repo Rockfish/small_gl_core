@@ -69,7 +69,7 @@ impl PlayingAnimation {
 
 /// An animation that is being faded out as part of a transition (from Bevy)
 #[derive(Debug, Clone)]
-struct AnimationTransition {
+pub struct AnimationTransition {
     /// The current weight. Starts at 1.0 and goes to 0.0 during the fade-out.
     current_weight: f32,
     /// How much to decrease `current_weight` per second
@@ -99,11 +99,12 @@ pub struct Animator {
     pub global_inverse_transform: Mat4,
     pub bone_data_map: RefCell<HashMap<BoneName, BoneData>>,
 
-    model_animation: ModelAnimation, // maybe should be vec?
+    pub model_animation: ModelAnimation, // maybe should be vec?
 
-    current_animation: PlayingAnimation,
-    transitions: RefCell<Vec<AnimationTransition>>,
-    node_transforms: RefCell<HashMap<Rc<str>, NodeTransform>>,
+    pub current_animation: PlayingAnimation,
+    pub transitions: RefCell<Vec<AnimationTransition>>,
+
+    pub node_transforms: RefCell<HashMap<Rc<str>, NodeTransform>>,
 
     pub final_bone_matrices: RefCell<Vec<Mat4>>,
     pub final_node_matrices: RefCell<Vec<Mat4>>,

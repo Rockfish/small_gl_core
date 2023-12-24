@@ -31,3 +31,7 @@ path = "examples/sample_animation/sample_animation.rs"
 name = "assimp_report"
 path = "examples/assimp_report/assimp_report.rs"
 
+[[example]]
+name = "selecting_point"
+path = "examples/selecting_point/main_selecting_point.rs"
+
