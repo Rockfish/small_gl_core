@@ -18,7 +18,7 @@ pub enum CameraMovement {
     Down,
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct Camera {
     // camera Attributes
     pub position: Vec3,
