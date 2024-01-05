@@ -10,17 +10,6 @@ pub struct Cube {
 }
 
 impl Cube {
-    // pub fn new(name: &str, shader: Rc<Shader>) -> Model {
-    //     let mesh = Cube::get_meshes();
-    //
-    //     let model = Model {
-    //         name: Rc::from(name),
-    //         meshes: Rc::new(RefCell::new(vec![mesh])),
-    //     };
-    //
-    //     model
-    // }
-
     fn get_meshes() -> ModelMesh {
         let (vertices, indices) = Cube::data();
         let texture = Rc::new(
@@ -28,6 +17,7 @@ impl Cube {
                 &PathBuf::from("examples/sample_animation/container2.png"),
                 &TextureConfig {
                     flip_v: false,
+                    flip_h: false,
                     gamma_correction: false,
                     filter: TextureFilter::Linear,
                     wrap: TextureWrap::Clamp,

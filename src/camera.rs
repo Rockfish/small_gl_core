@@ -79,9 +79,26 @@ impl Camera {
         camera
     }
 
+    // calculates the front vector from the Camera's (updated) Euler Angles
+    fn update_camera_vectors(&mut self) {
+        // calculate the new Front vector
+        let front = vec3(
+            self.yaw.to_radians().cos() * self.pitch.to_radians().cos(),
+            self.pitch.to_radians().sin(),
+            self.yaw.to_radians().sin() * self.pitch.to_radians().cos(),
+        );
+
+        self.front = front.normalize_or_zero();
+
+        // also re-calculate the Right and Up vector
+        // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
+        self.right = self.front.cross(self.world_up).normalize_or_zero();
+        self.up = self.right.cross(self.front).normalize_or_zero();
+    }
+
     // returns the view matrix calculated using Euler Angles and the LookAt Matrix
     pub fn get_view_matrix(&self) -> Mat4 {
-        Mat4::look_at_rh(self.position, self.position + self.front, self.up)
+        Mat4::look_to_rh(self.position, self.front, self.up)
     }
 
     // processes input received from any keyboard-like input system. Accepts input parameter
@@ -135,22 +152,5 @@ impl Camera {
         if self.zoom > 45.0 {
             self.zoom = 45.0;
         }
-    }
-
-    // calculates the front vector from the Camera's (updated) Euler Angles
-    fn update_camera_vectors(&mut self) {
-        // calculate the new Front vector
-        let front = vec3(
-            self.yaw.to_radians().cos() * self.pitch.to_radians().cos(),
-            self.pitch.to_radians().sin(),
-            self.yaw.to_radians().sin() * self.pitch.to_radians().cos(),
-        );
-
-        self.front = front.normalize_or_zero();
-
-        // also re-calculate the Right and Up vector
-        // normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
-        self.right = self.front.cross(self.world_up).normalize_or_zero();
-        self.up = self.right.cross(self.front).normalize_or_zero();
     }
 }

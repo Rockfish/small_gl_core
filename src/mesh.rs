@@ -1,7 +1,7 @@
 use crate::gl;
 use crate::gl::{GLsizei, GLsizeiptr, GLuint, GLvoid};
 use crate::shader::Shader;
-use crate::texture::Texture;
+use crate::texture::{bind_texture, Texture};
 use glam::{vec3, Mat4, Vec2, Vec3};
 use std::mem;
 use std::rc::Rc;
@@ -141,7 +141,7 @@ impl Mesh {
         }
     }
 
-    pub fn render(&self, shader: &Shader, position: Vec3, angle: f32, scale: Vec3) {
+    pub fn render(&self, shader: &Rc<Shader>, position: Vec3, angle: f32, scale: Vec3) {
         let position = if self.flip_to_xz {
             vec3(position.x - 400.0, 0.0, position.y - 400.0)
         } else {
@@ -158,13 +158,10 @@ impl Mesh {
         model_transform *= Mat4::from_scale(scale);
         shader.set_mat4("model", &model_transform);
 
-        let texture_location = 0;
-        shader.set_int("texture_diffuse1", texture_location as i32);
+        bind_texture(shader, 0, "texture_diffuse", &self.texture);
 
         unsafe {
-            gl::ActiveTexture(gl::TEXTURE0 + texture_location);
             gl::BindVertexArray(self.vao);
-            gl::BindTexture(gl::TEXTURE_2D, self.texture.id);
             gl::DrawElements(
                 gl::TRIANGLES,
                 self.indices.len() as i32,

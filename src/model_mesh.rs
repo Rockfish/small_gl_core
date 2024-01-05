@@ -95,12 +95,12 @@ impl ModelMesh {
 
     pub fn render(&self, shader: &Rc<Shader>) {
         unsafe {
-            for texture in self.textures.iter() {
-                let texture_name = texture.texture_type.to_string();
-                shader.set_int(&texture_name, texture.id as i32);
-
-                gl::ActiveTexture(gl::TEXTURE0 + texture.id as u32);
+            for (texture_unit, texture) in self.textures.iter().enumerate() {
+                gl::ActiveTexture(gl::TEXTURE0 + texture_unit as u32);
                 gl::BindTexture(gl::TEXTURE_2D, texture.id);
+
+                let uniform_name = texture.texture_type.to_string();
+                shader.set_int(&uniform_name, texture_unit as i32);
             }
 
             gl::BindVertexArray(self.vao);

@@ -1,6 +1,6 @@
 extern crate glam;
 
-use glam::{Vec3, vec4, Vec4Swizzles};
+use glam::{vec4, Vec3, Vec4Swizzles};
 
 pub fn screen_to_model_glam(
     mouse_x: f32,
@@ -10,7 +10,6 @@ pub fn screen_to_model_glam(
     view_matrix: &glam::Mat4,
     projection_matrix: &glam::Mat4,
 ) -> Vec3 {
-
     // Convert screen coordinates to normalized device coordinates
 
     let ndc_x = (2.0 * mouse_x) / viewport_width - 1.0;
@@ -28,7 +27,7 @@ pub fn screen_to_model_glam(
     // let eye_space = clip_space / clip_space.w;
 
     // Convert eye space to world space (inverse view matrix)
-    let world_space = view_matrix.inverse() *  eye_space;
+    let world_space = view_matrix.inverse() * eye_space;
 
     Vec3::new(world_space.x, world_space.y, world_space.z)
 }
@@ -62,12 +61,7 @@ pub fn get_world_ray_from_mouse(
     ray_world
 }
 
-pub fn ray_plane_intersection(
-    ray_origin: Vec3,
-    ray_direction: Vec3,
-    plane_point: Vec3,
-    plane_normal: Vec3,
-) -> Option<Vec3> {
+pub fn ray_plane_intersection(ray_origin: Vec3, ray_direction: Vec3, plane_point: Vec3, plane_normal: Vec3) -> Option<Vec3> {
     let denom = plane_normal.dot(ray_direction);
     if denom.abs() > f32::EPSILON {
         let p0l0 = plane_point - ray_origin;
@@ -81,23 +75,18 @@ pub fn ray_plane_intersection(
 
 #[cfg(test)]
 mod tests {
-    use glam::{Mat4, vec2, vec3, vec4, Vec4Swizzles};
     use crate::math::{get_world_ray_from_mouse, ray_plane_intersection, screen_to_model_glam};
+    use glam::{vec2, vec3, vec4, Mat4, Vec4Swizzles};
 
     #[test]
     fn test_screen_to_model() {
-
         let mouse_x: f32 = 50.0;
         let mouse_y: f32 = 50.0;
         let viewport_width: f32 = 100.0;
         let viewport_height: f32 = 100.0;
         let zoom: f32 = 45.0;
 
-        let projection = Mat4::perspective_rh_gl(
-            zoom.to_radians(),
-            viewport_width as f32 / viewport_height as f32,
-            1.0,
-            100.0);
+        let projection = Mat4::perspective_rh_gl(zoom.to_radians(), viewport_width as f32 / viewport_height as f32, 1.0, 100.0);
 
         let player_position = vec3(0.0, 0.0, 0.0);
 
@@ -110,15 +99,7 @@ mod tests {
 
         println!("view_matrix: {:?}", view_matrix);
 
-        let result = screen_to_model_glam(
-            mouse_x,
-            mouse_y,
-            viewport_width,
-            viewport_height,
-            &view_matrix,
-            &projection
-        );
-
+        let result = screen_to_model_glam(mouse_x, mouse_y, viewport_width, viewport_height, &view_matrix, &projection);
 
         println!("result: {:?}", result);
     }
@@ -138,11 +119,7 @@ mod tests {
 
         println!("zoom_radians: {:?}", zoom_radians);
 
-        let projection = Mat4::perspective_rh_gl(
-            zoom_radians,
-            viewport_width / viewport_height,
-            1.0,
-            100.0);
+        let projection = Mat4::perspective_rh_gl(zoom_radians, viewport_width / viewport_height, 1.0, 100.0);
 
         println!("projection: {:?}\n", projection);
 
@@ -157,7 +134,7 @@ mod tests {
         let view_matrix = Mat4::look_at_rh(camera_position, center, camera_up);
 
         // forward calculation
-        println!("model_position.extend(1.0): {:?}",  model_position.extend(1.0));
+        println!("model_position.extend(1.0): {:?}", model_position.extend(1.0));
 
         let mvp_matrix = projection * view_matrix * model_transform;
         let clip_space_position = mvp_matrix * model_position.extend(1.0);
@@ -181,7 +158,10 @@ mod tests {
         // let clip_inverse_w = clip_inverse / clip_inverse.w;
         // println!("clip_inverse_w: {:?}", clip_inverse_w);
 
-        let scene_position = vec2(clip_screen_position_w.x * viewport_width, clip_screen_position_w.y * viewport_height);
+        let scene_position = vec2(
+            clip_screen_position_w.x * viewport_width,
+            clip_screen_position_w.y * viewport_height,
+        );
         println!("scene_position: {:?}", scene_position);
 
         let mouse_x = ((clip_screen_position_w.x + 1.0) * viewport_width) / 2.0;
@@ -216,12 +196,7 @@ mod tests {
         let plane_point = vec3(0.0, 0.0, 0.0);
         let plane_normal = vec3(0.0, 1.0, 0.0);
 
-        let intersection = ray_plane_intersection(
-            camera_position,
-            ray_world,
-            plane_point,
-            plane_normal,
-        );
+        let intersection = ray_plane_intersection(camera_position, ray_world, plane_point, plane_normal);
 
         println!("intersection: {:?}", intersection);
     }
@@ -235,16 +210,12 @@ mod tests {
         let viewport_height: f32 = 100.0;
 
         let model_position = glam::Vec3::new(0.0, 0.0, 0.0);
-        let model_transform = Mat4::from_translation(model_position);
+        let _model_transform = Mat4::from_translation(model_position);
 
         let zoom: f32 = 45.0;
         let zoom_radians = zoom.to_radians();
 
-        let projection = Mat4::perspective_rh_gl(
-            zoom_radians,
-            viewport_width / viewport_height,
-            1.0,
-            100.0);
+        let projection = Mat4::perspective_rh_gl(zoom_radians, viewport_width / viewport_height, 1.0, 100.0);
 
         let camera_position = vec3(0.0, 5.0, -5.0);
         let center = vec3(0.0, 0.0, 0.0);
@@ -252,24 +223,13 @@ mod tests {
 
         let view_matrix = Mat4::look_at_rh(camera_position, center, camera_up);
 
-        let world_ray = get_world_ray_from_mouse(
-            mouse_x,
-            mouse_y,
-            viewport_width,
-            viewport_height,
-            &view_matrix,
-            &projection);
+        let world_ray = get_world_ray_from_mouse(mouse_x, mouse_y, viewport_width, viewport_height, &view_matrix, &projection);
 
         // the xz plane
         let plane_point = vec3(0.0, 0.0, 0.0);
         let plane_normal = vec3(0.0, 1.0, 0.0);
 
-        let intersection = ray_plane_intersection(
-            camera_position,
-            world_ray,
-            plane_point,
-            plane_normal,
-        );
+        let intersection = ray_plane_intersection(camera_position, world_ray, plane_point, plane_normal);
 
         println!("intersection: {:?}", intersection);
     }
