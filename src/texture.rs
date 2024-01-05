@@ -7,7 +7,6 @@ use russimp::sys::aiTextureType;
 use std::ffi::{c_uint, OsString};
 use std::fmt::{Display, Formatter};
 use std::path::PathBuf;
-use std::rc::Rc;
 use crate::shader::Shader;
 
 #[derive(Debug, Copy, Clone)]
@@ -222,7 +221,7 @@ impl Texture {
     }
 }
 
-pub fn bind_texture(shader: &Rc<Shader>, texture_unit: i32, uniform_name: &str, texture: &Texture) {
+pub fn bind_texture(shader: &Shader, texture_unit: i32, uniform_name: &str, texture: &Texture) {
     unsafe {
         gl::ActiveTexture(gl::TEXTURE0 + texture_unit as u32);
         gl::BindTexture(gl::TEXTURE_2D, texture.id);

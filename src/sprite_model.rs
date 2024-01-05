@@ -45,7 +45,7 @@ impl SpriteModel {
         }
     }
 
-    pub fn render(&mut self, shader: &Rc<Shader>, position: Vec3, angle: f32, scale: Vec3, delta_time: f32) {
+    pub fn render(&mut self, shader: &Shader, position: Vec3, angle: f32, scale: Vec3, delta_time: f32) {
         match self.sprite_data.animation_type {
             SpriteAnimationType::None => {}
             SpriteAnimationType::Once => {}

@@ -25,7 +25,7 @@ pub struct Model {
 }
 
 impl Model {
-    pub fn render(&self, shader: &Rc<Shader>) {
+    pub fn render(&self, shader: &Shader) {
         let animator = self.animator.borrow();
         let final_bones = animator.final_bone_matrices.borrow_mut();
         let final_nodes = animator.final_node_matrices.borrow_mut();

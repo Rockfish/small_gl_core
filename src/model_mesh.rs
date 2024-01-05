@@ -93,7 +93,7 @@ impl ModelMesh {
         mesh
     }
 
-    pub fn render(&self, shader: &Rc<Shader>) {
+    pub fn render(&self, shader: &Shader) {
         unsafe {
             for (texture_unit, texture) in self.textures.iter().enumerate() {
                 gl::ActiveTexture(gl::TEXTURE0 + texture_unit as u32);
