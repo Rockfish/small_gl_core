@@ -12,6 +12,7 @@ use glam::*;
 use russimp::node::Node;
 use russimp::scene::{PostProcess, Scene};
 use std::cell::RefCell;
+use std::ops::Deref;
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::time::Duration;
@@ -303,13 +304,18 @@ impl ModelBuilder {
                         texture_type: texture_type.clone(),
                     },
                 )?);
-
                 println!("loaded texture: {:?}", &texture);
-
                 texture_cache.push(texture.clone());
                 Ok(texture)
             }
-            Some(texture) => Ok(texture.clone()),
+            Some(texture) => {
+                let mut texture = texture.deref().clone();
+                if texture.texture_type != *texture_type {
+                    texture.texture_type = *texture_type;
+                }
+                println!("cloned texture: {:?}", &texture);
+                Ok(Rc::new(texture))
+            },
         }
     }
 }
