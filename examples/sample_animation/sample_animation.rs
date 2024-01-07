@@ -8,6 +8,7 @@
 // extern crate glfw;
 
 mod cube_object;
+mod animation_weights;
 
 use glam::*;
 use glfw::{Action, Context, Key};
@@ -158,12 +159,12 @@ fn main() {
         .build()
         .unwrap();
 
-    let idle = Rc::new(AnimationClip::new("idle", 55.0, 130.0, AnimationRepeat::Forever));
-    let forward = Rc::new(AnimationClip::new("forward", 134.0, 154.0, AnimationRepeat::Forever));
-    let backwards = Rc::new(AnimationClip::new("backwards", 159.0, 179.0, AnimationRepeat::Forever));
-    let right = Rc::new(AnimationClip::new("right", 184.0, 204.0, AnimationRepeat::Forever));
-    let left = Rc::new(AnimationClip::new("left", 209.0, 229.0, AnimationRepeat::Forever));
-    let dying = Rc::new(AnimationClip::new("dying", 234.0, 293.0, AnimationRepeat::Once));
+    let idle = Rc::new(AnimationClip::new(55.0, 130.0, AnimationRepeat::Forever));
+    let forward = Rc::new(AnimationClip::new(134.0, 154.0, AnimationRepeat::Forever));
+    let backwards = Rc::new(AnimationClip::new(159.0, 179.0, AnimationRepeat::Forever));
+    let right = Rc::new(AnimationClip::new(184.0, 204.0, AnimationRepeat::Forever));
+    let left = Rc::new(AnimationClip::new(209.0, 229.0, AnimationRepeat::Forever));
+    let dying = Rc::new(AnimationClip::new(234.0, 293.0, AnimationRepeat::Once));
 
     dancing_model.play_clip(&idle);
     dancing_model.play_clip_with_transition(&forward, Duration::from_secs(6));

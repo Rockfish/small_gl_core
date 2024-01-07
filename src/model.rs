@@ -315,7 +315,7 @@ impl ModelBuilder {
                 }
                 println!("cloned texture: {:?}", &texture);
                 Ok(Rc::new(texture))
-            },
+            }
         }
     }
 }

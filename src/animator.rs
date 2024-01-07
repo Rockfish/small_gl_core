@@ -19,16 +19,14 @@ pub enum AnimationRepeat {
 
 #[derive(Debug, Clone)]
 pub struct AnimationClip {
-    pub name: String,
     pub start_tick: f32,
     pub end_tick: f32,
     pub repeat: AnimationRepeat,
 }
 
 impl AnimationClip {
-    pub fn new(name: impl Into<String>, start_tick: f32, end_tick: f32, repeat: AnimationRepeat) -> Self {
+    pub fn new(start_tick: f32, end_tick: f32, repeat: AnimationRepeat) -> Self {
         AnimationClip {
-            name: name.into(),
             start_tick,
             end_tick,
             repeat,
@@ -129,7 +127,6 @@ impl Animator {
         }
 
         let animation_clip = AnimationClip {
-            name: "Model".to_string(),
             start_tick: 0.0,
             end_tick: model_animation.duration,
             repeat: AnimationRepeat::Forever,

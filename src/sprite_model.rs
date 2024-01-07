@@ -61,8 +61,7 @@ impl SpriteModel {
             ),
         );
 
-        shader
-            .set_vec2("tex_size", &vec2(self.sprite_data.texture_width, self.sprite_data.texture_height));
+        shader.set_vec2("tex_size", &vec2(self.sprite_data.texture_width, self.sprite_data.texture_height));
 
         self.mesh.render(&shader, position, angle, scale);
     }
