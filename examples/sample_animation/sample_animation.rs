@@ -8,7 +8,6 @@
 // extern crate glfw;
 
 mod cube_object;
-mod animation_weights;
 
 use glam::*;
 use glfw::{Action, Context, Key};

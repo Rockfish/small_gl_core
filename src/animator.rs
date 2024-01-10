@@ -2,6 +2,7 @@ use crate::hash_map::HashMap;
 use crate::model_animation::{BoneData, BoneName, ModelAnimation, NodeData};
 use crate::node_animation::NodeAnimation;
 use crate::transform::Transform;
+use crate::utils::min;
 use glam::Mat4;
 use russimp::node::Node;
 use russimp::scene::Scene;
@@ -30,6 +31,27 @@ impl AnimationClip {
             start_tick,
             end_tick,
             repeat,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct WeightedAnimation {
+    pub weight: f32,
+    pub start_tick: f32,
+    pub end_tick: f32,
+    pub offset: f32,
+    pub optional_start: f32,
+}
+
+impl WeightedAnimation {
+    pub fn new(weight: f32, start_tick: f32, end_tick: f32, offset: f32, optional_start: f32) -> Self {
+        WeightedAnimation {
+            weight,
+            start_tick,
+            end_tick,
+            offset,
+            optional_start, // used for non-looped animations
         }
     }
 }
@@ -69,17 +91,17 @@ impl PlayingAnimation {
 #[derive(Debug, Clone)]
 pub struct AnimationTransition {
     /// The current weight. Starts at 1.0 and goes to 0.0 during the fade-out.
-    current_weight: f32,
+    pub current_weight: f32,
     /// How much to decrease `current_weight` per second
-    weight_decline_per_sec: f32,
+    pub weight_decline_per_sec: f32,
     /// The animation that is being faded out
-    animation: PlayingAnimation,
+    pub animation: PlayingAnimation,
 }
 
 #[derive(Debug, Clone)]
 pub struct NodeTransform {
-    transform: Transform,
-    meshes: Rc<Vec<u32>>,
+    pub transform: Transform,
+    pub meshes: Rc<Vec<u32>>,
 }
 
 impl NodeTransform {
@@ -161,6 +183,50 @@ impl Animator {
         }
     }
 
+    pub fn play_weight_animations(&mut self, weighted_animation: &[WeightedAnimation], frame_time: f32) {
+        {
+            let mut node_map = self.node_transforms.borrow_mut();
+            let node_animations = self.model_animation.node_animations.borrow();
+
+            // reset node transforms
+            node_map.clear();
+
+            let inverse_transform = Transform::from_matrix(self.global_inverse_transform.clone());
+
+            for weighted in weighted_animation {
+                if weighted.weight == 0.0 {
+                    continue;
+                }
+
+                let tick_range = weighted.end_tick - weighted.start_tick;
+
+                let mut target_anim_ticks = if weighted.optional_start > 0.0 {
+                    let tick = (frame_time - weighted.optional_start) * self.model_animation.ticks_per_second + weighted.offset;
+                    min(tick, tick_range)
+                } else {
+                    (frame_time * self.model_animation.ticks_per_second + weighted.offset) % tick_range
+                };
+
+                target_anim_ticks += weighted.start_tick;
+
+                if target_anim_ticks < (weighted.start_tick - 0.01) || target_anim_ticks > (weighted.end_tick + 0.01) {
+                    panic!("target_anim_ticks out of range: {}", target_anim_ticks);
+                }
+
+                calculate_transform_maps(
+                    &self.root_node,
+                    &node_animations,
+                    &mut node_map,
+                    inverse_transform,
+                    target_anim_ticks,
+                    weighted.weight,
+                );
+            }
+        }
+
+        self.update_final_transforms();
+    }
+
     pub fn play_clip_with_transition(&mut self, clip: &Rc<AnimationClip>, transition_duration: Duration) {
         let mut animation = PlayingAnimation {
             animation_clip: clip.clone(),
@@ -185,6 +251,13 @@ impl Animator {
         self.update_transitions(delta_time);
         self.update_node_map(delta_time);
         self.update_final_transforms();
+    }
+
+    fn update_transitions(&mut self, delta_time: f32) {
+        self.transitions.borrow_mut().retain_mut(|animation| {
+            animation.current_weight -= animation.weight_decline_per_sec * delta_time;
+            animation.current_weight > 0.0
+        })
     }
 
     fn update_node_map(&mut self, delta_time: f32) {
@@ -217,13 +290,6 @@ impl Animator {
                 transition.current_weight,
             );
         }
-    }
-
-    fn update_transitions(&mut self, delta_time: f32) {
-        self.transitions.borrow_mut().retain_mut(|animation| {
-            animation.current_weight -= animation.weight_decline_per_sec * delta_time;
-            animation.current_weight > 0.0
-        })
     }
 
     fn update_final_transforms(&self) {

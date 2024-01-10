@@ -1,4 +1,4 @@
-use crate::animator::{AnimationClip, Animator};
+use crate::animator::{AnimationClip, Animator, WeightedAnimation};
 use crate::error::Error;
 use crate::error::Error::{MeshError, SceneError};
 use crate::hash_map::HashMap;
@@ -51,6 +51,10 @@ impl Model {
 
     pub fn play_clip_with_transition(&self, clip: &Rc<AnimationClip>, transition_duration: Duration) {
         self.animator.borrow_mut().play_clip_with_transition(clip, transition_duration);
+    }
+
+    pub fn play_weight_animations(&mut self, weighted_animation: &[WeightedAnimation], frame_time: f32) {
+        self.animator.borrow_mut().play_weight_animations(weighted_animation, frame_time);
     }
 }
 
