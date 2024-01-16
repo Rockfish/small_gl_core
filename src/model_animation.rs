@@ -1,11 +1,11 @@
 use crate::node_animation::NodeAnimation;
 use crate::transform::Transform;
 use glam::Mat4;
+use log::debug;
 use russimp::animation::Animation;
 use russimp::scene::Scene;
 use std::cell::RefCell;
 use std::rc::Rc;
-use log::debug;
 
 #[derive(Debug, Clone)]
 pub struct NodeData {

@@ -4,9 +4,9 @@ use crate::shader::Shader;
 use crate::texture::Texture;
 use glam::u32;
 use glam::*;
+use log::debug;
 use std::mem;
 use std::rc::Rc;
-use log::debug;
 
 const MAX_BONE_INFLUENCE: usize = 4;
 const OFFSET_OF_NORMAL: usize = mem::offset_of!(ModelVertex, normal);
@@ -104,6 +104,19 @@ impl ModelMesh {
                 shader.set_int(&uniform_name, texture_unit as i32);
             }
 
+            gl::BindVertexArray(self.vao);
+            gl::DrawElements(
+                gl::TRIANGLES,
+                self.indices.len() as i32,
+                gl::UNSIGNED_INT,
+                std::ptr::null::<GLvoid>(),
+            );
+            gl::BindVertexArray(0);
+        }
+    }
+
+    pub fn render_no_textures(&self, shader: &Shader) {
+        unsafe {
             gl::BindVertexArray(self.vao);
             gl::DrawElements(
                 gl::TRIANGLES,

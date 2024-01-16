@@ -1,8 +1,8 @@
 use crate::transform::Transform;
 use glam::{Quat, Vec3};
+use log::debug;
 use russimp::animation::{NodeAnim, QuatKey, VectorKey};
 use std::rc::Rc;
-use log::debug;
 
 #[derive(Debug, Clone)]
 pub struct KeyPosition {

@@ -247,6 +247,14 @@ impl Shader {
             gl::UniformMatrix4fv(location, 1, gl::FALSE, matrix.to_cols_array().as_ptr());
         }
     }
+
+    // ------------------------------------------------------------------------
+    pub fn set_texture_id(&self, texture_unit: u32, texture_id: u32) {
+        unsafe {
+            gl::ActiveTexture(gl::TEXTURE0 + texture_unit);
+            gl::BindTexture(gl::TEXTURE_2D, texture_id);
+        }
+    }
 }
 
 fn read_file(filename: &str) -> Result<String, Error> {

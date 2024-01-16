@@ -9,6 +9,7 @@ use crate::texture::{Texture, TextureConfig, TextureFilter, TextureType, Texture
 use crate::transform::Transform;
 use crate::utils::get_exists_filename;
 use glam::*;
+use log::debug;
 use russimp::node::Node;
 use russimp::scene::{PostProcess, Scene};
 use std::cell::RefCell;
@@ -16,30 +17,40 @@ use std::ops::Deref;
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::time::Duration;
-use log::debug;
 
 // model data
 #[derive(Debug, Clone)]
 pub struct Model {
     pub name: Rc<str>,
-    pub meshes: Rc<RefCell<Vec<ModelMesh>>>,
+    pub meshes: Rc<Vec<ModelMesh>>,
     pub animator: RefCell<Animator>,
 }
 
 impl Model {
     pub fn render(&self, shader: &Shader) {
         let animator = self.animator.borrow();
-        let final_bones = animator.final_bone_matrices.borrow_mut();
-        let final_nodes = animator.final_node_matrices.borrow_mut();
+        let final_bones = animator.final_bone_matrices.borrow();
+        let final_nodes = animator.final_node_matrices.borrow();
 
         for (i, bone_transform) in final_bones.iter().enumerate() {
             shader.set_mat4(format!("finalBonesMatrices[{}]", i).as_str(), &bone_transform);
         }
 
-        for mesh in self.meshes.borrow_mut().iter() {
+        for mesh in self.meshes.iter() {
             shader.set_mat4("nodeTransform", &final_nodes[mesh.id as usize]);
             mesh.render(shader);
         }
+    }
+
+    pub fn set_shader_bones_for_mesh(&self, shader: &Shader, mesh: &ModelMesh) {
+        let animator = self.animator.borrow();
+        let final_bones = animator.final_bone_matrices.borrow();
+        let final_nodes = animator.final_node_matrices.borrow();
+
+        for (i, bone_transform) in final_bones.iter().enumerate() {
+            shader.set_mat4(format!("finalBonesMatrices[{}]", i).as_str(), &bone_transform);
+        }
+        shader.set_mat4("nodeTransform", &final_nodes[mesh.id as usize]);
     }
 
     pub fn update_animation(&self, delta_time: f32) {
@@ -57,6 +68,10 @@ impl Model {
     pub fn play_weight_animations(&mut self, weighted_animation: &[WeightedAnimation], frame_time: f32) {
         self.animator.borrow_mut().play_weight_animations(weighted_animation, frame_time);
     }
+
+    // pub fn get_mesh(&self, name: &str) -> Option<&ModelMesh> {
+    //     self.meshes.borrow().iter().find(|mesh| mesh.name == name)
+    // }
 }
 
 #[derive(Debug)]
@@ -140,7 +155,7 @@ impl ModelBuilder {
 
         let model = Model {
             name: Rc::from(self.name),
-            meshes: Rc::from(RefCell::new(self.meshes)),
+            meshes: Rc::from(self.meshes),
             animator: animator.into(),
         };
 
