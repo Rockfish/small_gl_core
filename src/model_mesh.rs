@@ -6,6 +6,7 @@ use glam::u32;
 use glam::*;
 use std::mem;
 use std::rc::Rc;
+use log::debug;
 
 const MAX_BONE_INFLUENCE: usize = 4;
 const OFFSET_OF_NORMAL: usize = mem::offset_of!(ModelVertex, normal);
@@ -231,22 +232,22 @@ impl Drop for ModelMesh {
 }
 
 pub fn print_model_mesh(mesh: &ModelMesh) {
-    println!("mesh: {:#?}", mesh);
+    debug!("mesh: {:#?}", mesh);
 
-    println!("size vertex: {}", mem::size_of::<ModelVertex>());
-    println!("OFFSET_OF_NORMAL: {}", mem::offset_of!(ModelVertex, normal));
-    println!("OFFSET_OF_TEXCOORDS: {}", mem::offset_of!(ModelVertex, uv));
-    println!("OFFSET_OF_TANGENT: {}", mem::offset_of!(ModelVertex, tangent));
-    println!("OFFSET_OF_BITANGENT: {}", mem::offset_of!(ModelVertex, bi_tangent));
-    println!("OFFSET_OF_BONE_IDS: {}", mem::offset_of!(ModelVertex, bone_ids));
-    println!("OFFSET_OF_WEIGHTS: {}", mem::offset_of!(ModelVertex, bone_weights));
+    debug!("size vertex: {}", mem::size_of::<ModelVertex>());
+    debug!("OFFSET_OF_NORMAL: {}", mem::offset_of!(ModelVertex, normal));
+    debug!("OFFSET_OF_TEXCOORDS: {}", mem::offset_of!(ModelVertex, uv));
+    debug!("OFFSET_OF_TANGENT: {}", mem::offset_of!(ModelVertex, tangent));
+    debug!("OFFSET_OF_BITANGENT: {}", mem::offset_of!(ModelVertex, bi_tangent));
+    debug!("OFFSET_OF_BONE_IDS: {}", mem::offset_of!(ModelVertex, bone_ids));
+    debug!("OFFSET_OF_WEIGHTS: {}", mem::offset_of!(ModelVertex, bone_weights));
 
-    println!("size of Vec3: {}", mem::size_of::<Vec3>());
-    println!("size of Vec2: {}", mem::size_of::<Vec2>());
-    println!("size of [i32;4]: {}", mem::size_of::<[i32; MAX_BONE_INFLUENCE]>());
-    println!("size of [f32;4]: {}", mem::size_of::<[f32; MAX_BONE_INFLUENCE]>());
+    debug!("size of Vec3: {}", mem::size_of::<Vec3>());
+    debug!("size of Vec2: {}", mem::size_of::<Vec2>());
+    debug!("size of [i32;4]: {}", mem::size_of::<[i32; MAX_BONE_INFLUENCE]>());
+    debug!("size of [f32;4]: {}", mem::size_of::<[f32; MAX_BONE_INFLUENCE]>());
 
-    println!(
+    debug!(
         "size of vertex parts: {}",
         mem::size_of::<Vec3>() * 4
             + mem::size_of::<Vec2>()

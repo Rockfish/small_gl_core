@@ -16,6 +16,7 @@ use std::ops::Deref;
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::time::Duration;
+use log::debug;
 
 // model data
 #[derive(Debug, Clone)]
@@ -218,17 +219,17 @@ impl ModelBuilder {
 
         let material = &scene.materials[r_mesh.material_index as usize];
 
-        // println!("material: {:#?}", material);
+        // debug!("material: {:#?}", material);
 
         for (r_texture_type, r_texture) in material.textures.iter() {
             let texture_type = TextureType::convert_from(r_texture_type);
             match self.load_texture(&texture_type, r_texture.borrow().filename.as_str()) {
                 Ok(texture) => textures.push(texture),
-                Err(e) => println!("{:?}", e),
+                Err(e) => debug!("{:?}", e),
             }
         }
 
-        println!("mesh name: {}", &r_mesh.name);
+        debug!("mesh name: {}", &r_mesh.name);
 
         self.extract_bone_weights_for_vertices(&mut vertices, r_mesh);
 
@@ -308,7 +309,7 @@ impl ModelBuilder {
                         texture_type: texture_type.clone(),
                     },
                 )?);
-                println!("loaded texture: {:?}", &texture);
+                debug!("loaded texture: {:?}", &texture);
                 texture_cache.push(texture.clone());
                 Ok(texture)
             }
@@ -317,7 +318,7 @@ impl ModelBuilder {
                 if texture.texture_type != *texture_type {
                     texture.texture_type = *texture_type;
                 }
-                println!("cloned texture: {:?}", &texture);
+                debug!("cloned texture: {:?}", &texture);
                 Ok(Rc::new(texture))
             }
         }

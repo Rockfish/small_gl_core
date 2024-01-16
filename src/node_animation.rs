@@ -2,6 +2,7 @@ use crate::transform::Transform;
 use glam::{Quat, Vec3};
 use russimp::animation::{NodeAnim, QuatKey, VectorKey};
 use std::rc::Rc;
+use log::debug;
 
 #[derive(Debug, Clone)]
 pub struct KeyPosition {
@@ -36,7 +37,7 @@ impl NodeAnimation {
         let scales: Vec<KeyScale> = channel.scaling_keys.iter().map(|key| key.into()).collect();
 
         let name = name.into();
-        println!("NodeAnimation: {}", &name);
+        debug!("NodeAnimation: {}", &name);
 
         NodeAnimation {
             name,

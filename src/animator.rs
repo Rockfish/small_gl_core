@@ -321,7 +321,7 @@ fn read_hierarchy_data(source: &Rc<Node>) -> NodeData {
         meshes: Rc::from(source.meshes.clone()),
     };
 
-    // println!("NodeData: {} meshes: {:?}", &node_data.name, &source.meshes);
+    // debug!("NodeData: {} meshes: {:?}", &node_data.name, &source.meshes);
 
     for child in source.children.borrow().iter() {
         let node = read_hierarchy_data(child);

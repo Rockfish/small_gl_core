@@ -95,27 +95,27 @@ mod tests {
     #[test]
     pub fn test_truncate() {
         let mut v = vec2(100.0, 100.0);
-        println!("length: {}", v.length());
+        debug!("length: {}", v.length());
 
         v = truncate(v, 5.0);
-        println!("vec: {:?}  length: {}", v, v.length());
+        debug!("vec: {:?}  length: {}", v, v.length());
     }
 
     #[test]
     pub fn test_wraparound() {
         let mut v = vec2(10.0, 10.0);
         wrap_around(&mut v, 8, 8);
-        println!("{:?}", v);
+        debug!("{:?}", v);
         let mut v = vec2(10.0, 10.0);
         wrap_around(&mut v, 10, 11);
-        println!("{:?}", v);
+        debug!("{:?}", v);
     }
 
     // #[test]
     // pub fn test_distribution() {
     //     for i in 0..1000 {
     //         let x = rand_normal_distribution() - 2.0;
-    //         println!("{x}");
+    //         debug!("{x}");
     //     }
     // }
 
@@ -126,7 +126,7 @@ mod tests {
 
         let proj_vec = spot_vec.project_onto(wave_vec);
 
-        println!("{:?}", proj_vec);
+        debug!("{:?}", proj_vec);
     }
 }
 

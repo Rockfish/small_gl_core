@@ -17,7 +17,7 @@ pub fn screen_to_model_glam(
     let ndc_z = 0.7345023; // 1.0; // Assuming the point is on the near plane
     let ndc = glam::Vec4::new(ndc_x, ndc_y, ndc_z, 1.0);
 
-    // println!("ndc: {:?}", ndc);
+    // debug!("ndc: {:?}", ndc);
 
     // Convert NDC to clip space (inverse projection matrix)
     let clip_space = projection_matrix.inverse() * ndc;
@@ -97,11 +97,11 @@ mod tests {
 
         let view_matrix = Mat4::look_at_rh(camera_position, player_position, camera_up);
 
-        println!("view_matrix: {:?}", view_matrix);
+        debug!("view_matrix: {:?}", view_matrix);
 
         let result = screen_to_model_glam(mouse_x, mouse_y, viewport_width, viewport_height, &view_matrix, &projection);
 
-        println!("result: {:?}", result);
+        debug!("result: {:?}", result);
     }
 
     #[test]
@@ -113,15 +113,15 @@ mod tests {
         let model_position = glam::Vec3::new(0.0, 0.0, 0.0);
         // let model_position_vec4 = glam::Vec4::new(0.0, 1.0, 0.0, 1.0);
         let model_transform = Mat4::from_translation(model_position);
-        // println!("model_transform: {:?}\n", model_transform);
+        // debug!("model_transform: {:?}\n", model_transform);
 
         let zoom_radians = zoom.to_radians();
 
-        println!("zoom_radians: {:?}", zoom_radians);
+        debug!("zoom_radians: {:?}", zoom_radians);
 
         let projection = Mat4::perspective_rh_gl(zoom_radians, viewport_width / viewport_height, 1.0, 100.0);
 
-        println!("projection: {:?}\n", projection);
+        debug!("projection: {:?}\n", projection);
 
         // let camera_follow_vec = vec3(1.0, 4.3, 0.0);
         // let camera_follow_vec = vec3(0.0, 5.0, 0.0);
@@ -134,41 +134,41 @@ mod tests {
         let view_matrix = Mat4::look_at_rh(camera_position, center, camera_up);
 
         // forward calculation
-        println!("model_position.extend(1.0): {:?}", model_position.extend(1.0));
+        debug!("model_position.extend(1.0): {:?}", model_position.extend(1.0));
 
         let mvp_matrix = projection * view_matrix * model_transform;
         let clip_space_position = mvp_matrix * model_position.extend(1.0);
 
-        println!("clip_space_position: {:?}", clip_space_position);
+        debug!("clip_space_position: {:?}", clip_space_position);
 
         // let clip_inverse = mvp_matrix.inverse() * clip_space_position;
-        // println!("clip_inverse: {:?}", clip_inverse);
+        // debug!("clip_inverse: {:?}", clip_inverse);
 
         // Screen position
         let clip_screen_position_w = clip_space_position / clip_space_position.w;
-        println!("clip_screen_position_w: {:?}\n", clip_screen_position_w);
+        debug!("clip_screen_position_w: {:?}\n", clip_screen_position_w);
 
         // reverse clip_screen_position
         let inv_clip_screen_position = mvp_matrix.inverse() * clip_space_position;
-        println!("inv_clip_screen_position: {:?}", inv_clip_screen_position);
+        debug!("inv_clip_screen_position: {:?}", inv_clip_screen_position);
 
         let inv_clip_w = inv_clip_screen_position / inv_clip_screen_position.w;
-        println!("inv_clip_w: {:?}\n", inv_clip_w);
+        debug!("inv_clip_w: {:?}\n", inv_clip_w);
 
         // let clip_inverse_w = clip_inverse / clip_inverse.w;
-        // println!("clip_inverse_w: {:?}", clip_inverse_w);
+        // debug!("clip_inverse_w: {:?}", clip_inverse_w);
 
         let scene_position = vec2(
             clip_screen_position_w.x * viewport_width,
             clip_screen_position_w.y * viewport_height,
         );
-        println!("scene_position: {:?}", scene_position);
+        debug!("scene_position: {:?}", scene_position);
 
         let mouse_x = ((clip_screen_position_w.x + 1.0) * viewport_width) / 2.0;
         let mouse_y = ((-clip_screen_position_w.y + 1.0) * viewport_height) / 2.0;
 
         let mouse = vec2(mouse_x, mouse_y);
-        println!("mouse: {:?}", mouse);
+        debug!("mouse: {:?}", mouse);
 
         // glReadPixels(winX, winY, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &winZ);
 
@@ -179,7 +179,7 @@ mod tests {
         let ndc_z = -1.0; // -1 to face the same direction as the opengl camera
         let ndc = glam::Vec4::new(ndc_x, ndc_y, ndc_z, 1.0);
 
-        println!("ndc: {:?}\n", ndc);
+        debug!("ndc: {:?}\n", ndc);
 
         let projection_inverse = projection.inverse();
         let view_inverse = view_matrix.inverse();
@@ -190,7 +190,7 @@ mod tests {
         let ray_world = (view_inverse * ray_eye).xyz();
         let ray_world = ray_world.normalize_or_zero();
 
-        println!("ray_world: {:?}", ray_world);
+        debug!("ray_world: {:?}", ray_world);
 
         // the xz plane
         let plane_point = vec3(0.0, 0.0, 0.0);
@@ -198,7 +198,7 @@ mod tests {
 
         let intersection = ray_plane_intersection(camera_position, ray_world, plane_point, plane_normal);
 
-        println!("intersection: {:?}", intersection);
+        debug!("intersection: {:?}", intersection);
     }
 
     #[test]
@@ -231,6 +231,6 @@ mod tests {
 
         let intersection = ray_plane_intersection(camera_position, world_ray, plane_point, plane_normal);
 
-        println!("intersection: {:?}", intersection);
+        debug!("intersection: {:?}", intersection);
     }
 }
