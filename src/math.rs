@@ -55,10 +55,9 @@ pub fn get_world_ray_from_mouse(
 
     // world space
     let ray_world = (view_inverse * ray_eye).xyz();
-    let ray_world = ray_world.normalize_or_zero();
 
     // ray from camera
-    ray_world
+    ray_world.normalize_or_zero()
 }
 
 pub fn ray_plane_intersection(ray_origin: Vec3, ray_direction: Vec3, plane_point: Vec3, plane_normal: Vec3) -> Option<Vec3> {
@@ -77,6 +76,7 @@ pub fn ray_plane_intersection(ray_origin: Vec3, ray_direction: Vec3, plane_point
 mod tests {
     use crate::math::{get_world_ray_from_mouse, ray_plane_intersection, screen_to_model_glam};
     use glam::{vec2, vec3, vec4, Mat4, Vec4Swizzles};
+    use log::debug;
 
     #[test]
     fn test_screen_to_model() {
@@ -86,12 +86,12 @@ mod tests {
         let viewport_height: f32 = 100.0;
         let zoom: f32 = 45.0;
 
-        let projection = Mat4::perspective_rh_gl(zoom.to_radians(), viewport_width as f32 / viewport_height as f32, 1.0, 100.0);
+        let projection = Mat4::perspective_rh_gl(zoom.to_radians(), viewport_width / viewport_height, 1.0, 100.0);
 
         let player_position = vec3(0.0, 0.0, 0.0);
 
         let camera_follow_vec = vec3(-4.0, 4.3, 0.0);
-        let camera_position = player_position.clone() + camera_follow_vec;
+        let camera_position = player_position + camera_follow_vec;
 
         let camera_up = vec3(0.0, 1.0, 0.0);
 

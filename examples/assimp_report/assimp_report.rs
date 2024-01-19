@@ -1,3 +1,7 @@
+#![allow(dead_code)]
+#![allow(unused_assignments)]
+#![allow(unused_variables)]
+
 use glam::Mat4;
 use russimp::animation::Animation;
 use russimp::bone::Bone;
@@ -95,10 +99,10 @@ impl SceneParser {
     }
 
     fn parse_scene(&mut self, scene: &Scene) {
-        self.parse_meshes(&scene);
+        self.parse_meshes(scene);
         self.validate_bones();
-        self.parse_hierarchy(&scene);
-        self.parse_animations(&scene);
+        self.parse_hierarchy(scene);
+        self.parse_animations(scene);
     }
 
     fn parse_meshes(&mut self, scene: &Scene) {
@@ -199,7 +203,7 @@ impl SceneParser {
         println!("\n*******************************************************");
         println!("Parsing the node hierarchy");
         println!();
-        self.parse_node(&scene.root.as_ref().unwrap());
+        self.parse_node(scene.root.as_ref().unwrap());
     }
 
     fn parse_node(&mut self, node: &Rc<Node>) {

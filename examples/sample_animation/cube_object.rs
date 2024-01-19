@@ -14,7 +14,7 @@ impl Cube {
         let (vertices, indices) = Cube::data();
         let texture = Rc::new(
             Texture::new(
-                &PathBuf::from("examples/sample_animation/container2.png"),
+                PathBuf::from("examples/sample_animation/container2.png"),
                 &TextureConfig {
                     flip_v: false,
                     flip_h: false,

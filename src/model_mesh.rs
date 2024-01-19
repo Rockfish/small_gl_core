@@ -115,7 +115,7 @@ impl ModelMesh {
         }
     }
 
-    pub fn render_no_textures(&self, shader: &Shader) {
+    pub fn render_no_textures(&self) {
         unsafe {
             gl::BindVertexArray(self.vao);
             gl::DrawElements(

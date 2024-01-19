@@ -5,7 +5,7 @@ use crate::error::Error;
 use crate::error::Error::PathError;
 use std::cmp::Ordering;
 use std::ops::Mul;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[inline]
 pub fn min<T: PartialOrd>(a: T, b: T) -> T {
@@ -86,6 +86,20 @@ pub fn wrap_around(pos: &mut Vec2, max_x: i32, max_y: i32) {
     }
 }
 
+pub fn get_exists_filename(directory: &Path, filename: &str) -> Result<PathBuf, Error> {
+    let path = directory.join(filename);
+    if path.is_file() {
+        return Ok(path);
+    }
+    let filepath = PathBuf::from(filename.replace('\\', "/"));
+    let filename = filepath.file_name().unwrap();
+    let path = directory.join(filename);
+    if path.is_file() {
+        return Ok(path);
+    }
+    Err(PathError(format!("filename not found: {:?}", filename.to_os_string())))
+}
+
 #[cfg(test)]
 mod tests {
     // use crate::utils::{rand_normal_distribution, truncate, wrap_around};
@@ -95,20 +109,20 @@ mod tests {
     #[test]
     pub fn test_truncate() {
         let mut v = vec2(100.0, 100.0);
-        debug!("length: {}", v.length());
+        println!("length: {}", v.length());
 
         v = truncate(v, 5.0);
-        debug!("vec: {:?}  length: {}", v, v.length());
+        println!("vec: {:?}  length: {}", v, v.length());
     }
 
     #[test]
     pub fn test_wraparound() {
         let mut v = vec2(10.0, 10.0);
         wrap_around(&mut v, 8, 8);
-        debug!("{:?}", v);
+        println!("{:?}", v);
         let mut v = vec2(10.0, 10.0);
         wrap_around(&mut v, 10, 11);
-        debug!("{:?}", v);
+        println!("{:?}", v);
     }
 
     // #[test]
@@ -126,20 +140,6 @@ mod tests {
 
         let proj_vec = spot_vec.project_onto(wave_vec);
 
-        debug!("{:?}", proj_vec);
+        println!("{:?}", proj_vec);
     }
-}
-
-pub fn get_exists_filename(directory: &PathBuf, filename: &str) -> Result<PathBuf, Error> {
-    let path = directory.join(&filename);
-    if path.is_file() {
-        return Ok(path);
-    }
-    let filepath = PathBuf::from(filename.replace("\\", "/"));
-    let filename = filepath.file_name().unwrap();
-    let path = directory.join(&filename);
-    if path.is_file() {
-        return Ok(path);
-    }
-    Err(PathError(format!("filename not found: {:?}", filename.to_os_string())))
 }

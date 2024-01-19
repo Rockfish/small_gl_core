@@ -249,7 +249,7 @@ impl Shader {
     }
 
     // ------------------------------------------------------------------------
-    pub fn set_texture_id(&self, texture_unit: u32, texture_id: u32) {
+    pub fn set_texture_unit(&self, texture_unit: u32, texture_id: u32) {
         unsafe {
             gl::ActiveTexture(gl::TEXTURE0 + texture_unit);
             gl::BindTexture(gl::TEXTURE_2D, texture_id);

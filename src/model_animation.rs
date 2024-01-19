@@ -79,7 +79,7 @@ impl ModelAnimation {
     /// converts channel vec of Russimp::NodeAnims into vec of NodeAnimation
     fn read_channel_node_animations(&mut self, animation: &Animation) {
         for channel in &animation.channels {
-            let node_animation = NodeAnimation::new(&channel.name.clone(), &channel);
+            let node_animation = NodeAnimation::new(&channel.name.clone(), channel);
             self.node_animations.borrow_mut().push(node_animation);
         }
     }

@@ -107,7 +107,7 @@ pub struct NodeTransform {
 impl NodeTransform {
     pub fn new(transform: Transform, meshes_vec: &Rc<Vec<u32>>) -> Self {
         NodeTransform {
-            transform: transform.clone(),
+            transform,
             meshes: meshes_vec.clone(),
         }
     }
@@ -136,7 +136,7 @@ impl Animator {
         let global_inverse_transform = root.transformation.inverse();
         let root_node = read_hierarchy_data(&root);
 
-        let model_animation = ModelAnimation::new(&scene);
+        let model_animation = ModelAnimation::new(scene);
 
         let mut final_bone_matrices = Vec::with_capacity(100);
         let mut final_node_matrices = Vec::with_capacity(50);
@@ -191,7 +191,7 @@ impl Animator {
             // reset node transforms
             node_map.clear();
 
-            let inverse_transform = Transform::from_matrix(self.global_inverse_transform.clone());
+            let inverse_transform = Transform::from_matrix(self.global_inverse_transform);
 
             for weighted in weighted_animation {
                 if weighted.weight == 0.0 {
@@ -267,7 +267,7 @@ impl Animator {
         let mut node_map = self.node_transforms.borrow_mut();
         let node_animations = self.model_animation.node_animations.borrow();
 
-        let inverse_transform = Transform::from_matrix(self.global_inverse_transform.clone());
+        let inverse_transform = Transform::from_matrix(self.global_inverse_transform);
 
         // First for current animation at weight 1.0
         calculate_transform_maps(
@@ -316,7 +316,7 @@ impl Animator {
 fn read_hierarchy_data(source: &Rc<Node>) -> NodeData {
     let mut node_data = NodeData {
         name: Rc::from(source.name.as_str()),
-        transform: Transform::from_matrix(source.transformation.clone()),
+        transform: Transform::from_matrix(source.transformation),
         children: vec![],
         meshes: Rc::from(source.meshes.clone()),
     };
@@ -360,7 +360,7 @@ fn calculate_transform(
             let node_transform = node_animation.get_animation_transform(current_tick);
             parent_transform.mul_transform(node_transform)
         }
-        None => parent_transform.mul_transform(*&node_data.transform),
+        None => parent_transform.mul_transform(node_data.transform),
     };
 
     node_map

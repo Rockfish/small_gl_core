@@ -2,6 +2,7 @@
 #![allow(non_snake_case)]
 #![allow(non_camel_case_types)]
 #![allow(unused_assignments)]
+#![allow(unused_variables)]
 #![allow(clippy::zero_ptr)]
 #![allow(clippy::assign_op_pattern)]
 

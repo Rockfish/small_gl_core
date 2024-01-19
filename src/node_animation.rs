@@ -69,11 +69,10 @@ impl NodeAnimation {
             animation_time,
         );
 
-        let final_position = self.positions[p0_index]
+        // final_position
+         self.positions[p0_index]
             .position
-            .lerp(self.positions[p1_index].position, scale_factor);
-
-        final_position
+            .lerp(self.positions[p1_index].position, scale_factor)
     }
 
     fn interpolate_rotation(&self, animation_time: f32) -> Quat {
@@ -91,11 +90,10 @@ impl NodeAnimation {
             animation_time,
         );
 
-        let final_rotation = self.rotations[p0_index]
+        // final_rotation
+        self.rotations[p0_index]
             .orientation
-            .slerp(self.rotations[p1_index].orientation, scale_factor);
-
-        final_rotation
+            .slerp(self.rotations[p1_index].orientation, scale_factor)
     }
 
     fn interpolate_scaling(&self, animation_time: f32) -> Vec3 {
@@ -108,9 +106,8 @@ impl NodeAnimation {
 
         let scale_factor = self.get_scale_factor(self.scales[p0_index].time_stamp, self.scales[p1_index].time_stamp, animation_time);
 
-        let final_scale = self.scales[p0_index].scale.lerp(self.scales[p1_index].scale, scale_factor);
-
-        final_scale
+        // final_scale
+        self.scales[p0_index].scale.lerp(self.scales[p1_index].scale, scale_factor)
     }
 
     fn get_position_index(&self, animation_time: f32) -> usize {
@@ -150,7 +147,7 @@ impl NodeAnimation {
 impl From<&VectorKey> for KeyPosition {
     fn from(vector_key: &VectorKey) -> Self {
         KeyPosition {
-            position: vector_key.value.clone(),
+            position: vector_key.value,
             time_stamp: vector_key.time as f32,
         }
     }
@@ -159,7 +156,7 @@ impl From<&VectorKey> for KeyPosition {
 impl From<&QuatKey> for KeyRotation {
     fn from(quad_key: &QuatKey) -> Self {
         KeyRotation {
-            orientation: quad_key.value.clone(),
+            orientation: quad_key.value,
             time_stamp: quad_key.time as f32,
         }
     }
@@ -168,7 +165,7 @@ impl From<&QuatKey> for KeyRotation {
 impl From<&VectorKey> for KeyScale {
     fn from(vector_key: &VectorKey) -> Self {
         KeyScale {
-            scale: vector_key.value.clone(),
+            scale: vector_key.value,
             time_stamp: vector_key.time as f32,
         }
     }

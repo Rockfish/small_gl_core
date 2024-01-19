@@ -33,7 +33,7 @@ impl Model {
         let final_nodes = animator.final_node_matrices.borrow();
 
         for (i, bone_transform) in final_bones.iter().enumerate() {
-            shader.set_mat4(format!("finalBonesMatrices[{}]", i).as_str(), &bone_transform);
+            shader.set_mat4(format!("finalBonesMatrices[{}]", i).as_str(), bone_transform);
         }
 
         for mesh in self.meshes.iter() {
@@ -48,7 +48,7 @@ impl Model {
         let final_nodes = animator.final_node_matrices.borrow();
 
         for (i, bone_transform) in final_bones.iter().enumerate() {
-            shader.set_mat4(format!("finalBonesMatrices[{}]", i).as_str(), &bone_transform);
+            shader.set_mat4(format!("finalBonesMatrices[{}]", i).as_str(), bone_transform);
         }
         shader.set_mat4("nodeTransform", &final_nodes[mesh.id as usize]);
     }
@@ -253,7 +253,7 @@ impl ModelBuilder {
         Ok(mesh)
     }
 
-    fn extract_bone_weights_for_vertices(&mut self, vertices: &mut Vec<ModelVertex>, r_mesh: &russimp::mesh::Mesh) {
+    fn extract_bone_weights_for_vertices(&mut self, vertices: &mut [ModelVertex], r_mesh: &russimp::mesh::Mesh) {
         let mut bone_data_map = self.bone_data_map.borrow_mut();
 
         for bone in &r_mesh.bones {
@@ -264,7 +264,7 @@ impl ModelBuilder {
                     let bone_info = BoneData {
                         name: Rc::from(bone.name.as_str()),
                         bone_index: self.bone_count,
-                        offset_transform: Transform::from_matrix(bone.offset_matrix.clone()),
+                        offset_transform: Transform::from_matrix(bone.offset_matrix),
                     };
                     bone_data_map.insert(bone.name.clone(), bone_info);
                     bone_id = self.bone_count;
@@ -293,7 +293,8 @@ impl ModelBuilder {
             let mesh = self.meshes.iter_mut().find(|mesh| mesh.name == added_texture.mesh_name);
             if let Some(model_mesh) = mesh {
                 let path = self.directory.join(&added_texture.texture_filename).into_os_string();
-                if model_mesh.textures.iter().find(|t| t.texture_path == path).is_none() {
+
+                if !model_mesh.textures.iter().any(|t| t.texture_path == path) {
                     model_mesh.textures.push(texture);
                 }
             } else {
@@ -321,7 +322,7 @@ impl ModelBuilder {
                         gamma_correction: self.gamma_correction,
                         filter: TextureFilter::Linear,
                         wrap: TextureWrap::Repeat,
-                        texture_type: texture_type.clone(),
+                        texture_type: *texture_type,
                     },
                 )?);
                 debug!("loaded texture: {:?}", &texture);
